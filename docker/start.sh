@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
+mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
 php artisan storage:link >/dev/null 2>&1 || true
 
 if [ -n "${APP_KEY:-}" ]; then
