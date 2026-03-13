@@ -24,6 +24,7 @@ RUN apk add --no-cache \
         libzip-dev \
         icu-dev \
         postgresql-dev \
+        sqlite-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         bcmath \
