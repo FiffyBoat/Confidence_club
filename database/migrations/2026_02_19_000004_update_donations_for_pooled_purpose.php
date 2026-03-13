@@ -82,12 +82,22 @@ return new class extends Migration
             $table->foreignId('special_contribution_id')->nullable()->change();
         });
 
-        DB::statement('
-            UPDATE donations d
-            JOIN contributions c ON c.id = d.special_contribution_id
-            SET d.special_contribution_purpose = c.description
-            WHERE d.special_contribution_id IS NOT NULL
-        ');
+        if ($driver === 'pgsql') {
+            DB::statement('
+                UPDATE donations d
+                SET special_contribution_purpose = c.description
+                FROM contributions c
+                WHERE c.id = d.special_contribution_id
+                  AND d.special_contribution_id IS NOT NULL
+            ');
+        } else {
+            DB::statement('
+                UPDATE donations d
+                JOIN contributions c ON c.id = d.special_contribution_id
+                SET d.special_contribution_purpose = c.description
+                WHERE d.special_contribution_id IS NOT NULL
+            ');
+        }
     }
 
     public function down(): void
