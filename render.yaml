@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: confidence-club
+    env: docker
+    plan: free
+    autoDeploy: true
