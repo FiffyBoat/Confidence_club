@@ -6,7 +6,7 @@
     <style>
         @page { margin: 24px 28px; }
         body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 10px; color: #1b1b1b; }
-        .header { margin-bottom: 16px; }
+        .header { margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
         .title { font-size: 16px; font-weight: 700; }
         .subtitle { font-size: 11px; color: #6b6b6b; margin-top: 4px; }
         .section-title { font-size: 12px; font-weight: 700; margin: 14px 0 6px; }
@@ -20,13 +20,28 @@
         .text-right { text-align: right; }
         .page-break { page-break-before: always; }
         .meta { font-size: 9px; color: #6b6b6b; }
+        .logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
+    @php
+        $logoPath = public_path('images/ccm-logo.png');
+        $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
+    @endphp
     <div class="header">
-        <div class="title">{{ config('app.name', 'CONFIDENCE CLUB MEMBERS') }} - Detailed Financial Report</div>
-        <div class="subtitle">Period: {{ $start->format('Y-m-d') }} to {{ $end->format('Y-m-d') }}</div>
-        <div class="meta">Generated: {{ $generatedAt?->format('Y-m-d H:i') }}</div>
+        @if($logoData)
+            <img src="{{ $logoData }}" alt="Club Logo" class="logo">
+        @endif
+        <div>
+            <div class="title">{{ config('app.name', 'CONFIDENCE CLUB MEMBERS') }} - Detailed Financial Report</div>
+            <div class="subtitle">Period: {{ $start->format('Y-m-d') }} to {{ $end->format('Y-m-d') }}</div>
+            <div class="meta">Generated: {{ $generatedAt?->format('Y-m-d H:i') }}</div>
+        </div>
     </div>
 
     <div class="section-title">Summary</div>

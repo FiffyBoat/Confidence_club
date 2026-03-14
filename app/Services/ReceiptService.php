@@ -117,4 +117,98 @@ class ReceiptService
 
         return 'REC-'.$year.'-'.str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
     }
+
+    public function regeneratePdf(Receipt $receipt): ?string
+    {
+        $payload = $this->buildPayloadFromReceipt($receipt);
+
+        if (! $payload) {
+            return null;
+        }
+
+        $path = $receipt->pdf_path ?: 'receipts/'.$receipt->receipt_number.'.pdf';
+        $pdf = Pdf::loadView('receipts.pdf', array_merge($payload, [
+            'receiptNumber' => $receipt->receipt_number,
+            'amount' => $receipt->amount,
+        ]));
+
+        Storage::disk('public')->put($path, $pdf->output());
+
+        if ($receipt->pdf_path !== $path) {
+            $receipt->update(['pdf_path' => $path]);
+        }
+
+        return $path;
+    }
+
+    private function buildPayloadFromReceipt(Receipt $receipt): ?array
+    {
+        if ($receipt->reference_type === Receipt::TYPE_CONTRIBUTION) {
+            $contribution = Contribution::withTrashed()
+                ->with(['member', 'recordedBy'])
+                ->find($receipt->reference_id);
+
+            if (! $contribution) {
+                return null;
+            }
+
+            return [
+                'title' => 'Contribution Receipt',
+                'member' => $contribution->member,
+                'record' => $contribution,
+                'reference' => $contribution->type,
+                'paymentType' => $contribution->type,
+                'paymentMethod' => $contribution->payment_method,
+                'description' => $contribution->description,
+                'transactionDate' => $contribution->transaction_date,
+                'recordedBy' => $contribution->recordedBy?->name,
+            ];
+        }
+
+        if ($receipt->reference_type === Receipt::TYPE_INCOME) {
+            $income = Income::withTrashed()
+                ->with('recordedBy')
+                ->find($receipt->reference_id);
+
+            if (! $income) {
+                return null;
+            }
+
+            return [
+                'title' => 'Income Receipt',
+                'member' => null,
+                'record' => $income,
+                'reference' => $income->source,
+                'paymentType' => 'Income',
+                'paymentMethod' => null,
+                'description' => $income->description,
+                'transactionDate' => $income->transaction_date,
+                'recordedBy' => $income->recordedBy?->name,
+            ];
+        }
+
+        if ($receipt->reference_type === Receipt::TYPE_LOAN_REPAYMENT) {
+            $repayment = LoanRepayment::withTrashed()
+                ->with(['loan.member', 'recordedBy'])
+                ->find($receipt->reference_id);
+
+            if (! $repayment) {
+                return null;
+            }
+
+            return [
+                'title' => 'Loan Repayment Receipt',
+                'member' => $repayment->loan?->member,
+                'record' => $repayment,
+                'reference' => 'Loan #'.$repayment->loan_id,
+                'paymentType' => 'Loan Repayment',
+                'paymentMethod' => null,
+                'description' => 'Repayment for Loan #'.$repayment->loan_id,
+                'transactionDate' => $repayment->payment_date,
+                'recordedBy' => $repayment->recordedBy?->name,
+            ];
+        }
+
+        return null;
+    }
 }

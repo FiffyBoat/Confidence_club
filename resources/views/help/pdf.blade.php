@@ -33,16 +33,37 @@
             border-bottom: 1px solid #f0e0e4;
         }
         .grid td strong { display: block; margin-bottom: 2px; }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .logo {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
     @php
         $role = auth()->user()->role ?? 'treasurer';
         $isTreasurer = $role === 'treasurer';
+        $logoPath = public_path('images/ccm-logo.png');
+        $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
     @endphp
 
-    <div class="badge">User Manual</div>
-    <h1>{{ config('app.name') }} Guide</h1>
+    <div class="header">
+        @if($logoData)
+            <img src="{{ $logoData }}" alt="Club Logo" class="logo">
+        @endif
+        <div>
+            <div class="badge">User Manual</div>
+            <h1>{{ config('app.name', 'Confidence Club Members') }} Guide</h1>
+        </div>
+    </div>
     <div class="subtitle">
         @if($isTreasurer)
             Treasurer-only guidance for recording payments, receipts, and reports.

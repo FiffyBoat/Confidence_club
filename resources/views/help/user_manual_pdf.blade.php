@@ -20,11 +20,34 @@
             margin-top: 6px;
             background: #fff9fb;
         }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .logo {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
-    <h1>Confidence Club Members - User Manual</h1>
-    <div class="subtitle">Quick guide for Admin and Treasurer roles, plus public viewer access.</div>
+    @php
+        $logoPath = public_path('images/ccm-logo.png');
+        $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
+    @endphp
+    <div class="header">
+        @if($logoData)
+            <img src="{{ $logoData }}" alt="Club Logo" class="logo">
+        @endif
+        <div>
+            <h1>Confidence Club Members - User Manual</h1>
+            <div class="subtitle">Quick guide for Admin and Treasurer roles, plus public viewer access.</div>
+        </div>
+    </div>
 
     <div class="section">
         <h2>Quick Start</h2>

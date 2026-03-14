@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Treasurer;
 use App\Http\Controllers\Controller;
 use App\Models\Contribution;
 use App\Models\Receipt;
+use App\Services\ReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -81,18 +82,41 @@ class ReceiptController extends Controller
         return view('receipts.show', compact('receipt', 'paymentLabel'));
     }
 
-    public function download(Receipt $receipt)
+    public function download(Receipt $receipt, ReceiptService $receiptService)
     {
-        return Storage::disk('public')->download($receipt->pdf_path, $receipt->receipt_number.'.pdf');
+        $path = $this->resolveReceiptPath($receipt, $receiptService);
+
+        if (! $path) {
+            abort(404, 'Receipt file is not available.');
+        }
+
+        return Storage::disk('public')->download($path, $receipt->receipt_number.'.pdf');
     }
 
-    public function view(Receipt $receipt)
+    public function view(Receipt $receipt, ReceiptService $receiptService)
     {
+        $path = $this->resolveReceiptPath($receipt, $receiptService);
+
+        if (! $path) {
+            abort(404, 'Receipt file is not available.');
+        }
+
         return Storage::disk('public')->response(
-            $receipt->pdf_path,
+            $path,
             $receipt->receipt_number.'.pdf',
             ['Content-Disposition' => 'inline; filename="'.$receipt->receipt_number.'.pdf"']
         );
+    }
+
+    private function resolveReceiptPath(Receipt $receipt, ReceiptService $receiptService): ?string
+    {
+        $path = $receipt->pdf_path ?: 'receipts/'.$receipt->receipt_number.'.pdf';
+
+        if (Storage::disk('public')->exists($path)) {
+            return $path;
+        }
+
+        return $receiptService->regeneratePdf($receipt);
     }
 
     private function buildPaymentLabels(array $receipts): array

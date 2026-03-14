@@ -36,11 +36,34 @@
         .right {
             text-align: right;
         }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
     </style>
 </head>
 <body>
-    <h1>CCM Import Summary</h1>
-    <div class="muted">Generated: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+    @php
+        $logoPath = public_path('images/ccm-logo.png');
+        $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
+    @endphp
+    <div class="header">
+        @if($logoData)
+            <img src="{{ $logoData }}" alt="Club Logo" class="logo">
+        @endif
+        <div>
+            <h1>CCM Import Summary</h1>
+            <div class="muted">Generated: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+        </div>
+    </div>
 
     <h2>Live Totals</h2>
     <table>
