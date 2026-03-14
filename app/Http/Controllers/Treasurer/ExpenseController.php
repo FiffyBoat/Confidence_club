@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Treasurer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreExpenseRequest;
+use App\Http\Requests\UpdateExpenseRequest;
 use App\Models\ActivityLog;
 use App\Models\Expense;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +33,11 @@ class ExpenseController extends Controller
         return view('expenses.create');
     }
 
+    public function edit(Expense $expense): View
+    {
+        return view('expenses.edit', compact('expense'));
+    }
+
     public function store(StoreExpenseRequest $request): RedirectResponse
     {
         $expense = DB::transaction(function () use ($request) {
@@ -53,6 +59,26 @@ class ExpenseController extends Controller
         });
 
         return redirect()->route('expenses.show', $expense)->with('success', 'Expense recorded.');
+    }
+
+    public function update(UpdateExpenseRequest $request, Expense $expense): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $expense) {
+            $expense->update([
+                'category' => $request->validated('category'),
+                'amount' => $request->validated('amount'),
+                'description' => $request->validated('description'),
+                'transaction_date' => $request->validated('transaction_date'),
+            ]);
+
+            ActivityLog::create([
+                'user_id' => $request->user()->id,
+                'action' => 'Updated Expense',
+                'description' => 'Updated expense '.$expense->id,
+            ]);
+        });
+
+        return redirect()->route('expenses.show', $expense)->with('success', 'Expense updated.');
     }
 
     public function show(Expense $expense): View

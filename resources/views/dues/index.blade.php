@@ -181,4 +181,54 @@
         </table>
     </div>
 </div>
+
+<div class="card shadow-sm border-0 mt-4">
+    <div class="card-header bg-white">
+        <strong>Dues Payments ({{ $year }})</strong>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($duesPayments as $payment)
+                <tr>
+                    <td>
+                        <div class="fw-semibold">{{ $payment->member->full_name ?? '-' }}</div>
+                        <div class="text-muted small">{{ $payment->member->membership_id ?? '-' }}</div>
+                    </td>
+                    <td>{{ $payment->transaction_date?->format('M Y') }}</td>
+                    <td>GHS {{ number_format($payment->amount, 2) }}</td>
+                    <td>{{ $payment->transaction_date?->format('Y-m-d') }}</td>
+                    <td class="text-end">
+                        @if($payment->receipt)
+                            <a href="{{ route('receipts.view', $payment->receipt) }}" class="btn btn-outline-primary btn-sm" target="_blank">Receipt</a>
+                        @endif
+                        <a href="{{ route('contributions.edit', $payment) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                        <form action="{{ route('contributions.destroy', $payment) }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-danger btn-sm" onclick="return confirm('Delete dues payment?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5">No dues payments recorded for {{ $year }}.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white">
+        {{ $duesPayments->links('pagination::bootstrap-5') }}
+    </div>
+</div>
 @endsection

@@ -92,7 +92,7 @@
                             <th>Amount</th>
                             <th>Date</th>
                             <th>Recorded By</th>
-                            <th class="text-end">Receipt</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,9 +104,16 @@
                             <td class="text-end">
                                 @if($repayment->receipt)
                                     <a href="{{ route('receipts.view', $repayment->receipt) }}" class="btn btn-outline-primary btn-sm" target="_blank">Receipt</a>
-                                @else
-                                    <span class="text-muted small">Pending</span>
                                 @endif
+                                <a href="{{ route('loan-repayments.edit', $repayment) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                <form action="{{ route('loan-repayments.destroy', $repayment) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Delete repayment?')">Delete</button>
+                                </form>
+                                @unless($repayment->receipt)
+                                    <div class="text-muted small mt-1">Receipt pending</div>
+                                @endunless
                             </td>
                         </tr>
                         @empty

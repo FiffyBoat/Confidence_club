@@ -3,7 +3,10 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">Expense Details</h2>
-    <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary">Back</a>
+    <div class="d-flex gap-2">
+        <a href="{{ route('expenses.edit', $expense) }}" class="btn btn-outline-secondary">Edit</a>
+        <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary">Back</a>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0">

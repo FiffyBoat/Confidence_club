@@ -8,6 +8,7 @@
         <a href="{{ route('receipts.view', $contribution->receipt) }}" class="btn btn-primary" target="_blank">View / Print</a>
         <a href="{{ route('receipts.download', $contribution->receipt) }}" class="btn btn-outline-primary">Download Receipt</a>
         @endif
+        <a href="{{ route('contributions.edit', $contribution) }}" class="btn btn-outline-secondary">Edit</a>
         <a href="{{ route('contributions.index') }}" class="btn btn-outline-secondary">Back</a>
     </div>
 </div>

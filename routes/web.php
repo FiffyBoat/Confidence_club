@@ -81,13 +81,13 @@ Route::middleware(['auth', 'active', 'role:admin,treasurer'])->group(function ()
     Route::delete('members/{member}/force', [MemberController::class, 'forceDestroy'])->name('members.force-destroy');
     Route::get('dues', [DuesController::class, 'index'])->name('dues.index');
     Route::post('dues', [DuesController::class, 'store'])->name('dues.store');
-    Route::resource('contributions', ContributionController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::resource('contributions', ContributionController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     Route::resource('special-contributions', SpecialContributionController::class)->only(['index', 'store']);
-    Route::resource('donations', DonationController::class)->only(['index', 'store']);
-    Route::resource('incomes', IncomeController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
-    Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::resource('donations', DonationController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);
+    Route::resource('incomes', IncomeController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     Route::resource('loans', LoanController::class)->only(['index', 'create', 'store', 'show']);
-    Route::post('loan-repayments', [LoanRepaymentController::class, 'store'])->name('loan-repayments.store');
+    Route::resource('loan-repayments', LoanRepaymentController::class)->only(['store', 'edit', 'update', 'destroy']);
     Route::resource('receipts', ReceiptController::class)->only(['index', 'show']);
     Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->name('receipts.download');
     Route::get('receipts/{receipt}/view', [ReceiptController::class, 'view'])->name('receipts.view');

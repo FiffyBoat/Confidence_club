@@ -31,6 +31,13 @@ class DuesController extends Controller
             ->get()
             ->groupBy('member_id');
 
+        $duesPayments = Contribution::with(['member', 'receipt'])
+            ->where('type', 'Monthly Dues')
+            ->whereYear('transaction_date', $year)
+            ->orderBy('transaction_date', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
         $rows = $members->map(function (Member $member) use ($duesContributions, $year, $asOfMonth) {
             $months = [];
             for ($m = 1; $m <= 12; $m++) {
@@ -78,7 +85,7 @@ class DuesController extends Controller
             12 => 'Dec',
         ];
 
-        return view('dues.index', compact('rows', 'monthsList', 'year', 'asOfMonth', 'members'));
+        return view('dues.index', compact('rows', 'monthsList', 'year', 'asOfMonth', 'members', 'duesPayments'));
     }
 
     public function store(StoreDuesRequest $request): RedirectResponse

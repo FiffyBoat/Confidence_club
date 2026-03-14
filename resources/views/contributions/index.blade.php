@@ -59,6 +59,7 @@
                             @if($contribution->receipt)
                             <a href="{{ route('receipts.download', $contribution->receipt) }}" class="btn btn-outline-primary btn-sm">Receipt</a>
                             @endif
+                            <a href="{{ route('contributions.edit', $contribution) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
                             <a href="{{ route('contributions.show', $contribution) }}" class="btn btn-info btn-sm">View</a>
                             <form action="{{ route('contributions.destroy', $contribution) }}" method="POST" class="d-inline">
                                 @csrf

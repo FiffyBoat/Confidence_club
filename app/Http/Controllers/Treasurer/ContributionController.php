@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Treasurer;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContributionRequest;
+use App\Http\Requests\UpdateContributionRequest;
 use App\Models\ActivityLog;
 use App\Models\Contribution;
 use App\Models\Member;
@@ -11,6 +12,7 @@ use App\Services\ReceiptService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ContributionController extends Controller
@@ -47,6 +49,13 @@ class ContributionController extends Controller
         return view('contributions.create', compact('members'));
     }
 
+    public function edit(Contribution $contribution): View
+    {
+        $members = Member::orderBy('full_name')->get();
+
+        return view('contributions.edit', compact('contribution', 'members'));
+    }
+
     public function store(StoreContributionRequest $request): RedirectResponse
     {
         $contribution = DB::transaction(function () use ($request) {
@@ -76,6 +85,35 @@ class ContributionController extends Controller
         return redirect()->route('contributions.show', $contribution)->with('success', 'Contribution recorded.');
     }
 
+    public function update(UpdateContributionRequest $request, Contribution $contribution): RedirectResponse
+    {
+        DB::transaction(function () use ($request, $contribution) {
+            $contribution->update([
+                'member_id' => $request->validated('member_id'),
+                'type' => $request->validated('type'),
+                'description' => $request->validated('description'),
+                'amount' => $request->validated('amount'),
+                'payment_method' => $request->validated('payment_method'),
+                'transaction_date' => $request->validated('transaction_date'),
+            ]);
+
+            $contribution->refresh();
+
+            if ($contribution->receipt) {
+                $contribution->receipt->update(['amount' => $contribution->amount]);
+                $this->receiptService->regeneratePdf($contribution->receipt);
+            }
+
+            ActivityLog::create([
+                'user_id' => $request->user()->id,
+                'action' => 'Updated Contribution',
+                'description' => 'Updated contribution '.$contribution->id,
+            ]);
+        });
+
+        return redirect()->route('contributions.show', $contribution)->with('success', 'Contribution updated.');
+    }
+
     public function show(Contribution $contribution): View
     {
         $contribution->load(['member', 'receipt']);
@@ -85,6 +123,15 @@ class ContributionController extends Controller
 
     public function destroy(Request $request, Contribution $contribution): RedirectResponse
     {
+        if ($contribution->receipt) {
+            $path = $contribution->receipt->pdf_path;
+            $contribution->receipt->delete();
+
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+
         $contribution->delete();
 
         ActivityLog::create([

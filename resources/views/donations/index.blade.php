@@ -81,6 +81,7 @@
                             <th>Donated</th>
                             <th>Remaining</th>
                             <th>Date</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,10 +97,18 @@
                                 @endif
                             </td>
                             <td>{{ $donation->donation_date?->format('Y-m-d') }}</td>
+                            <td class="text-end">
+                                <a href="{{ route('donations.edit', $donation) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                <form action="{{ route('donations.destroy', $donation) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Delete donation?')">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5">No donations recorded.</td>
+                            <td colspan="6">No donations recorded.</td>
                         </tr>
                         @endforelse
                     </tbody>

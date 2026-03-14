@@ -12,6 +12,7 @@ class Donation extends Model
 
     protected $fillable = [
         'special_contribution_id',
+        'expense_id',
         'special_contribution_purpose',
         'donated_amount',
         'remaining_amount',
@@ -30,6 +31,11 @@ class Donation extends Model
     public function specialContribution(): BelongsTo
     {
         return $this->belongsTo(Contribution::class, 'special_contribution_id');
+    }
+
+    public function expense(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class);
     }
 
     public function recordedBy(): BelongsTo

@@ -7,6 +7,7 @@
         @if($income->receipt)
         <a href="{{ route('receipts.download', $income->receipt) }}" class="btn btn-outline-primary">Download Receipt</a>
         @endif
+        <a href="{{ route('incomes.edit', $income) }}" class="btn btn-outline-secondary">Edit</a>
         <a href="{{ route('incomes.index') }}" class="btn btn-outline-secondary">Back</a>
     </div>
 </div>

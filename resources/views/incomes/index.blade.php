@@ -46,6 +46,7 @@
                         <td>GHS {{ number_format($income->amount, 2) }}</td>
                         <td>{{ $income->transaction_date?->format('Y-m-d') }}</td>
                         <td class="text-end">
+                            <a href="{{ route('incomes.edit', $income) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
                             <a href="{{ route('incomes.show', $income) }}" class="btn btn-info btn-sm">View</a>
                             <form action="{{ route('incomes.destroy', $income) }}" method="POST" class="d-inline">
                                 @csrf

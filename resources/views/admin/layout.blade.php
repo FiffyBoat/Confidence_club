@@ -55,11 +55,15 @@
         .admin-sidebar {
             width: 260px;
             min-height: 100vh;
+            height: 100vh;
             background: linear-gradient(160deg, #b00020 0%, #8a0018 60%, #630012 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 4px 0 30px rgba(0, 0, 0, 0.12);
             display: flex;
             flex-direction: column;
+            position: sticky;
+            top: 0;
+            overflow: hidden;
         }
 
         .admin-nav {

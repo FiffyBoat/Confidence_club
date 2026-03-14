@@ -58,6 +58,22 @@ class LoanService
         });
     }
 
+    public function recalculateBalance(Loan $loan): void
+    {
+        $totalPaid = (float) $loan->repayments()->sum('amount');
+        $newBalance = max(0, (float) $loan->total_payable - $totalPaid);
+        $status = $newBalance <= 0 ? 'completed' : 'active';
+
+        if ($status === 'active' && $loan->due_date && now()->greaterThan($loan->due_date)) {
+            $status = 'overdue';
+        }
+
+        $loan->update([
+            'balance' => $newBalance,
+            'status' => $status,
+        ]);
+    }
+
     public function calculateTotalPayable(float $principal, float $interestRate): float
     {
         return round($principal + ($principal * ($interestRate / 100)), 2);

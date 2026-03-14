@@ -75,7 +75,7 @@
                             <th>Description</th>
                             <th>Amount</th>
                             <th>Date</th>
-                            <th class="text-end">Receipt</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,9 +88,16 @@
                             <td class="text-end">
                                 @if($contribution->receipt)
                                     <a href="{{ route('receipts.view', $contribution->receipt) }}" class="btn btn-outline-primary btn-sm" target="_blank">Receipt</a>
-                                @else
-                                    <span class="text-muted small">Pending</span>
                                 @endif
+                                <a href="{{ route('contributions.edit', $contribution) }}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                <form action="{{ route('contributions.destroy', $contribution) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-danger btn-sm" onclick="return confirm('Delete contribution?')">Delete</button>
+                                </form>
+                                @unless($contribution->receipt)
+                                    <div class="text-muted small mt-1">Receipt pending</div>
+                                @endunless
                             </td>
                         </tr>
                         @empty
