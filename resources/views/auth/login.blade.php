@@ -7,8 +7,8 @@
                 </div>
                 <h1 class="mt-6 text-4xl font-black leading-tight">
                     Welcome back to the
-                    <span class="text-amber-300">{{ config('app.name') }}</span>
-                    portal
+                    <span class="text-amber-300">Confidence Club Members</span>
+                    Portal
                 </h1>
                 <p class="mt-4 max-w-lg text-sm leading-7 text-slate-300">
                     Sign in to manage members, record contributions, generate receipts, and review reports with role-based access.
