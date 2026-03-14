@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Setting;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ConstitutionController extends Controller
 {
@@ -22,7 +22,7 @@ class ConstitutionController extends Controller
         ]);
     }
 
-    public function download(): Response
+    public function download(): StreamedResponse
     {
         $path = Setting::getValue('constitution_path');
         $name = Setting::getValue('constitution_name') ?? 'constitution.pdf';
