@@ -57,6 +57,31 @@
             background: linear-gradient(160deg, #b00020 0%, #8a0018 60%, #630012 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 4px 0 30px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+            margin-right: -0.25rem;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+        }
+
+        .admin-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .admin-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 999px;
+        }
+
+        .admin-nav::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         .admin-brand {
@@ -93,6 +118,11 @@
             color: #fff;
             background: rgba(0, 0, 0, 0.22);
             transform: translateX(2px);
+        }
+
+        .admin-link:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.7);
+            outline-offset: 2px;
         }
 
         .admin-link.active {
@@ -384,18 +414,48 @@
 
         @media (max-width: 991px) {
             .admin-sidebar {
-                width: 100%;
-                min-height: auto;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 260px;
+                min-height: 100vh;
                 border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: none;
+                border-bottom: none;
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                z-index: 1035;
+            }
+
+            .admin-sidebar.is-open {
+                transform: translateX(0);
+            }
+
+            .admin-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(8, 8, 8, 0.45);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                z-index: 1030;
+            }
+
+            .admin-backdrop.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            body.admin-sidebar-open {
+                overflow: hidden;
             }
         }
     </style>
 </head>
 <body>
 <div class="admin-shell d-flex flex-column flex-lg-row">
-    <aside class="admin-sidebar text-white p-3">
+    <aside class="admin-sidebar text-white p-3" id="admin-sidebar">
         <div class="admin-brand mb-3">
             <div>
                 <div class="fw-semibold">Admin Panel</div>
@@ -404,20 +464,28 @@
             <span class="brand-badge">Admin</span>
         </div>
         <hr>
-        <a href="{{ route('admin.dashboard') }}" class="admin-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Overview</a>
-        <a href="{{ route('admin.users.index') }}" class="admin-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>User Management</a>
-        <a href="{{ route('admin.activity-logs.index') }}" class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>Activity Logs</a>
-        <a href="{{ route('admin.settings') }}" class="admin-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-sliders2"></i>Settings</a>
-        <a href="{{ route('admin.announcements.index') }}" class="admin-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>Announcements</a>
-        <a href="{{ route('admin.meetings.index') }}" class="admin-link {{ request()->routeIs('admin.meetings*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>Meetings</a>
-        <hr>
-        <a href="{{ route('dashboard') }}" class="admin-link"><i class="bi bi-grid-1x2"></i>Main App</a>
+        <nav class="admin-nav" aria-label="Admin">
+            <a href="{{ route('admin.dashboard') }}" class="admin-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Overview</a>
+            <a href="{{ route('admin.users.index') }}" class="admin-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>User Management</a>
+            <a href="{{ route('admin.activity-logs.index') }}" class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>Activity Logs</a>
+            <a href="{{ route('admin.settings') }}" class="admin-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-sliders2"></i>Settings</a>
+            <a href="{{ route('admin.announcements.index') }}" class="admin-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>Announcements</a>
+            <a href="{{ route('admin.meetings.index') }}" class="admin-link {{ request()->routeIs('admin.meetings*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>Meetings</a>
+            <hr>
+            <a href="{{ route('dashboard') }}" class="admin-link"><i class="bi bi-grid-1x2"></i>Main App</a>
+        </nav>
     </aside>
+    <div class="admin-backdrop d-lg-none"></div>
 
     <main class="flex-fill">
         <div class="content-shell p-4">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
-                <div class="page-meta small">Administrator Access</div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary d-lg-none" id="adminSidebarToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="admin-sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="page-meta small">Administrator Access</div>
+                </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge text-bg-light border"><i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }}</span>
                     <form action="{{ route('logout') }}" method="POST" class="d-inline">
@@ -459,5 +527,46 @@
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const toggle = document.getElementById('adminSidebarToggle');
+        const backdrop = document.querySelector('.admin-backdrop');
+
+        if (!sidebar || !toggle || !backdrop) {
+            return;
+        }
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('is-open');
+            backdrop.classList.remove('show');
+            document.body.classList.remove('admin-sidebar-open');
+            toggle.setAttribute('aria-expanded', 'false');
+        };
+
+        const openSidebar = () => {
+            sidebar.classList.add('is-open');
+            backdrop.classList.add('show');
+            document.body.classList.add('admin-sidebar-open');
+            toggle.setAttribute('aria-expanded', 'true');
+        };
+
+        toggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('is-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992) {
+                closeSidebar();
+            }
+        });
+    });
+</script>
 </body>
 </html>

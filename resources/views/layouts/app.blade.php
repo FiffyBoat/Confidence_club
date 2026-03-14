@@ -58,6 +58,31 @@
             background: linear-gradient(160deg, #b00020 0%, #8a0018 60%, #630012 100%);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 4px 0 30px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+            margin-right: -0.25rem;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.35);
+            border-radius: 999px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
         }
 
         .sidebar .brand {
@@ -94,6 +119,11 @@
             color: #fff;
             background: rgba(0, 0, 0, 0.22);
             transform: translateX(2px);
+        }
+
+        .sidebar-link:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.7);
+            outline-offset: 2px;
         }
 
         .sidebar-link.active {
@@ -418,6 +448,10 @@
                 opacity: 1;
                 pointer-events: auto;
             }
+
+            body.sidebar-open {
+                overflow: hidden;
+            }
         }
     </style>
 </head>
@@ -425,7 +459,7 @@
 
 <div class="app-shell d-flex flex-column flex-lg-row">
 
-    <div class="sidebar text-white p-3">
+    <div class="sidebar text-white p-3" id="primary-sidebar">
         <div class="brand mb-3">
             <div>
                 <div class="fw-semibold">Confidence Club</div>
@@ -436,32 +470,34 @@
             @endauth
         </div>
         <hr>
-        @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'treasurer']))
-            <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Dashboard</a>
-            <a href="{{ route('members.index') }}" class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
-            <a href="{{ route('birthdays.index') }}" class="sidebar-link {{ request()->routeIs('birthdays.*') ? 'active' : '' }}"><i class="bi bi-balloon"></i>Birthdays</a>
-            <a href="{{ route('dues.index') }}" class="sidebar-link {{ request()->routeIs('dues.*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i>Dues</a>
-            <a href="{{ route('contributions.index') }}" class="sidebar-link {{ request()->routeIs('contributions.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i>Contributions</a>
-            <a href="{{ route('special-contributions.index') }}" class="sidebar-link {{ request()->routeIs('special-contributions.*') ? 'active' : '' }}"><i class="bi bi-stars"></i>Special Contributions</a>
-            <a href="{{ route('donations.index') }}" class="sidebar-link {{ request()->routeIs('donations.*') ? 'active' : '' }}"><i class="bi bi-heart"></i>Donations</a>
-            <a href="{{ route('incomes.index') }}" class="sidebar-link {{ request()->routeIs('incomes.*') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i>Income</a>
-            <a href="{{ route('expenses.index') }}" class="sidebar-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i>Expenses</a>
-            <a href="{{ route('loans.index') }}" class="sidebar-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="bi bi-bank"></i>Loans</a>
-            <a href="{{ route('receipts.index') }}" class="sidebar-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i>Receipts</a>
-            <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i>Reports</a>
-        @else
-            <a href="{{ route('viewer.dashboard') }}" class="sidebar-link {{ request()->routeIs('viewer.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Viewer Dashboard</a>
-            <a href="{{ route('viewer.members') }}" class="sidebar-link {{ request()->routeIs('viewer.members') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
-        @endif
-        @auth
-            <a href="{{ route('role-guide') }}" class="sidebar-link {{ request()->routeIs('role-guide*') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>Role Guide</a>
-            <a href="{{ route('help.index') }}" class="sidebar-link {{ request()->routeIs('help.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>User Manual</a>
-            <a href="{{ route('constitution.index') }}" class="sidebar-link {{ request()->routeIs('constitution.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i>Constitution</a>
-        @endauth
-        <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
-        @if(auth()->check() && auth()->user()->role === 'admin')
-            <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
-        @endif
+        <nav class="sidebar-nav" aria-label="Primary">
+            @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'treasurer']))
+                <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                <a href="{{ route('members.index') }}" class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
+                <a href="{{ route('birthdays.index') }}" class="sidebar-link {{ request()->routeIs('birthdays.*') ? 'active' : '' }}"><i class="bi bi-balloon"></i>Birthdays</a>
+                <a href="{{ route('dues.index') }}" class="sidebar-link {{ request()->routeIs('dues.*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i>Dues</a>
+                <a href="{{ route('contributions.index') }}" class="sidebar-link {{ request()->routeIs('contributions.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i>Contributions</a>
+                <a href="{{ route('special-contributions.index') }}" class="sidebar-link {{ request()->routeIs('special-contributions.*') ? 'active' : '' }}"><i class="bi bi-stars"></i>Special Contributions</a>
+                <a href="{{ route('donations.index') }}" class="sidebar-link {{ request()->routeIs('donations.*') ? 'active' : '' }}"><i class="bi bi-heart"></i>Donations</a>
+                <a href="{{ route('incomes.index') }}" class="sidebar-link {{ request()->routeIs('incomes.*') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i>Income</a>
+                <a href="{{ route('expenses.index') }}" class="sidebar-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i>Expenses</a>
+                <a href="{{ route('loans.index') }}" class="sidebar-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="bi bi-bank"></i>Loans</a>
+                <a href="{{ route('receipts.index') }}" class="sidebar-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i>Receipts</a>
+                <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i>Reports</a>
+            @else
+                <a href="{{ route('viewer.dashboard') }}" class="sidebar-link {{ request()->routeIs('viewer.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Viewer Dashboard</a>
+                <a href="{{ route('viewer.members') }}" class="sidebar-link {{ request()->routeIs('viewer.members') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
+            @endif
+            @auth
+                <a href="{{ route('role-guide') }}" class="sidebar-link {{ request()->routeIs('role-guide*') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>Role Guide</a>
+                <a href="{{ route('help.index') }}" class="sidebar-link {{ request()->routeIs('help.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>User Manual</a>
+                <a href="{{ route('constitution.index') }}" class="sidebar-link {{ request()->routeIs('constitution.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i>Constitution</a>
+            @endauth
+            <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
+            @if(auth()->check() && auth()->user()->role === 'admin')
+                <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
+            @endif
+        </nav>
     </div>
     <div class="sidebar-backdrop d-lg-none"></div>
 
@@ -469,7 +505,7 @@
         <div class="content-shell p-4">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle navigation">
+                    <button type="button" class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="primary-sidebar">
                         <i class="bi bi-list"></i>
                     </button>
                     <div class="page-meta small">Confidence Club Members</div>
@@ -532,11 +568,15 @@
         const closeSidebar = () => {
             sidebar.classList.remove('is-open');
             backdrop.classList.remove('show');
+            document.body.classList.remove('sidebar-open');
+            toggle.setAttribute('aria-expanded', 'false');
         };
 
         const openSidebar = () => {
             sidebar.classList.add('is-open');
             backdrop.classList.add('show');
+            document.body.classList.add('sidebar-open');
+            toggle.setAttribute('aria-expanded', 'true');
         };
 
         toggle.addEventListener('click', () => {

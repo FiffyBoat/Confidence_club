@@ -24,7 +24,7 @@
 </head>
 <body>
     <h1>Confidence Club Members - User Manual</h1>
-    <div class="subtitle">Quick guide for Admin and Treasurer roles, plus public visitor notes.</div>
+    <div class="subtitle">Quick guide for Admin and Treasurer roles, plus public viewer access.</div>
 
     <div class="section">
         <h2>Quick Start</h2>
@@ -32,6 +32,7 @@
             <li>Admin login: /admin/login</li>
             <li>Public viewer dashboard: /viewer (no login)</li>
             <li>Public directory: /viewer/members</li>
+            <li>Transparency portal: /transparency (if enabled)</li>
         </ul>
     </div>
 
@@ -95,6 +96,16 @@
             <li>Admin -> Announcements -> Publish updates.</li>
             <li>Admin -> Meetings -> Schedule meetings.</li>
             <li>Admin -> Settings -> Upload constitution and choose what appears on the public dashboard.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>Public Viewer Experience</h2>
+        <ul>
+            <li>/viewer shows announcements, meetings, special contributions, birthdays, and transparency snapshot (if enabled).</li>
+            <li>/viewer/members lets visitors search by name, ID, phone, or email and view contacts.</li>
+            <li>/constitution appears when the admin uploads a constitution.</li>
+            <li>Public visibility is controlled in Admin -> Settings -> Viewer Options.</li>
         </ul>
     </div>
 </body>

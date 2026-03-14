@@ -6,7 +6,7 @@
         <div>
             <div class="hero-badge">User Manual</div>
             <h2 class="page-title mb-1">Confidence Club Members Guide</h2>
-            <div class="page-subtitle">Step-by-step instructions for admins and treasurers, plus public visitor notes.</div>
+            <div class="page-subtitle">Step-by-step instructions for admins and treasurers, plus public viewer access.</div>
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <span class="pill"><i class="bi bi-book"></i>Reference</span>
                 <span class="pill"><i class="bi bi-eye"></i>Public ready</span>
@@ -33,6 +33,7 @@
                     <li>Admin login: <strong>/admin/login</strong></li>
                     <li>Public viewer: <strong>/viewer</strong> (no login)</li>
                     <li>Public directory: <strong>/viewer/members</strong></li>
+                    <li>Transparency portal: <strong>/transparency</strong> (if enabled)</li>
                 </ol>
             </div>
         </div>
@@ -147,10 +148,15 @@
 
 <div class="card shadow-sm border-0 mt-3">
     <div class="card-header bg-white">
-        <strong>Public Directory</strong>
+        <strong>Public Viewer Experience</strong>
     </div>
     <div class="card-body">
-        <p class="mb-0">Visit <strong>/viewer/members</strong> to search by name, membership ID, phone, or email. Public contacts display phone and email.</p>
+        <ul class="mb-0">
+            <li><strong>/viewer</strong> shows announcements, meetings, special contributions, birthdays, and transparency snapshot (if enabled).</li>
+            <li><strong>/viewer/members</strong> lets visitors search by name, ID, phone, or email and view contact details.</li>
+            <li><strong>/constitution</strong> appears when the admin uploads a constitution.</li>
+            <li>All public visibility is controlled in <strong>Admin → Settings → Viewer Options</strong>.</li>
+        </ul>
     </div>
 </div>
 @endsection
