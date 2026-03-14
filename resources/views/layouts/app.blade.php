@@ -386,11 +386,37 @@
 
         @media (max-width: 991px) {
             .sidebar {
-                width: 100%;
-                min-height: auto;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 260px;
+                min-height: 100vh;
                 border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-                box-shadow: none;
+                border-bottom: none;
+                box-shadow: 4px 0 30px rgba(0, 0, 0, 0.2);
+                transform: translateX(-100%);
+                transition: transform 0.25s ease;
+                z-index: 1035;
+            }
+
+            .sidebar.is-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(8, 8, 8, 0.45);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                z-index: 1030;
+            }
+
+            .sidebar-backdrop.show {
+                opacity: 1;
+                pointer-events: auto;
             }
         }
     </style>
@@ -437,11 +463,17 @@
             <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
         @endif
     </div>
+    <div class="sidebar-backdrop d-lg-none"></div>
 
     <div class="flex-fill">
         <div class="content-shell p-4">
             <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 gap-2">
-                <div class="page-meta small">Confidence Club Members</div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" aria-label="Toggle navigation">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="page-meta small">Confidence Club Members</div>
+                </div>
                 @auth
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge text-bg-light border"><i class="bi bi-person-circle me-1"></i>{{ auth()->user()->name }}</span>
@@ -487,5 +519,42 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sidebar = document.querySelector('.sidebar');
+        const toggle = document.getElementById('sidebarToggle');
+        const backdrop = document.querySelector('.sidebar-backdrop');
+
+        if (!sidebar || !toggle || !backdrop) {
+            return;
+        }
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('is-open');
+            backdrop.classList.remove('show');
+        };
+
+        const openSidebar = () => {
+            sidebar.classList.add('is-open');
+            backdrop.classList.add('show');
+        };
+
+        toggle.addEventListener('click', () => {
+            if (sidebar.classList.contains('is-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 992) {
+                closeSidebar();
+            }
+        });
+    });
+</script>
 </body>
 </html>
