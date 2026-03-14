@@ -45,8 +45,16 @@ class TransparencyController extends Controller
         }
 
         $driver = DB::getDriverName();
-        $yearExpr = $driver === 'sqlite' ? "strftime('%Y', transaction_date)" : 'YEAR(transaction_date)';
-        $monthExpr = $driver === 'sqlite' ? "strftime('%m', transaction_date)" : 'MONTH(transaction_date)';
+        $yearExpr = match ($driver) {
+            'sqlite' => "strftime('%Y', transaction_date)",
+            'pgsql' => 'EXTRACT(YEAR FROM transaction_date)',
+            default => 'YEAR(transaction_date)',
+        };
+        $monthExpr = match ($driver) {
+            'sqlite' => "strftime('%m', transaction_date)",
+            'pgsql' => 'EXTRACT(MONTH FROM transaction_date)',
+            default => 'MONTH(transaction_date)',
+        };
 
         $monthlyContributions = collect();
         if ($visibility['monthly_contributions']) {
