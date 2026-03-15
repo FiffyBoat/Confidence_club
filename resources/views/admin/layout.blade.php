@@ -456,6 +456,18 @@
                 overflow: hidden;
             }
         }
+
+        @media (min-width: 992px) {
+            .admin-shell {
+                padding-left: 260px;
+            }
+
+            .admin-sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+            }
+        }
     </style>
 </head>
 <body>
