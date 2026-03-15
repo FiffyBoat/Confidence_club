@@ -20,15 +20,15 @@
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
         .header-table td { vertical-align: middle; }
         .logo {
-            width: 64px;
-            height: 64px;
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
             background: #b00020;
             color: #fff;
             text-align: center;
-            line-height: 64px;
+            line-height: 84px;
             font-weight: 700;
-            font-size: 18px;
+            font-size: 20px;
         }
         .club-name { font-size: 20px; font-weight: 700; color: #1c1c1c; }
         .club-tagline { font-size: 11px; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px; }
@@ -118,9 +118,9 @@
 
 <table class="header-table">
     <tr>
-        <td style="width: 80px;">
+        <td style="width: 110px;">
             @if($logoData)
-                <img src="{{ $logoData }}" alt="Club Logo" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+                <img src="{{ $logoData }}" alt="Club Logo" style="width:84px;height:84px;border-radius:50%;object-fit:cover;">
             @else
                 <div class="logo">CCM</div>
             @endif

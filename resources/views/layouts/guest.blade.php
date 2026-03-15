@@ -42,8 +42,8 @@
                 <div class="w-full {{ $maxWidthClass }}">
                     <div class="mb-8 text-center">
                         <a href="{{ url('/') }}" class="inline-flex items-center gap-3 text-white">
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur">
-                                <img src="{{ asset('images/ccm-logo.png') }}" alt="Confidence Club" class="h-10 w-10 object-contain" />
+                            <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/15 backdrop-blur">
+                                <img src="{{ asset('images/ccm-logo.png') }}" alt="Confidence Club" class="h-14 w-14 object-contain" />
                             </span>
                             <span class="text-left">
                                 <span class="block text-xs font-semibold uppercase tracking-[0.3em] text-rose-200/90">CCM Portal</span>

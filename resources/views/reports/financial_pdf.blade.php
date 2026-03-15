@@ -21,8 +21,8 @@
         .page-break { page-break-before: always; }
         .meta { font-size: 9px; color: #6b6b6b; }
         .logo {
-            width: 52px;
-            height: 52px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             object-fit: cover;
         }

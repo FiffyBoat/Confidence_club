@@ -27,8 +27,8 @@
             margin-bottom: 12px;
         }
         .logo {
-            width: 54px;
-            height: 54px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             object-fit: cover;
         }

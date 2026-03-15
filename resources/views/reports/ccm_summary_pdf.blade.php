@@ -43,8 +43,8 @@
             margin-bottom: 10px;
         }
         .logo {
-            width: 52px;
-            height: 52px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             object-fit: cover;
         }
