@@ -44,7 +44,7 @@ class DuesController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $rows = $members->map(function (Member $member) use ($duesContributions, $year, $asOfMonth) {
+        $rows = $members->map(function (Member $member) use ($duesContributions, $year, $asOfMonth, $clubStartDate, $monthlyRate) {
             $months = [];
             for ($m = 1; $m <= 12; $m++) {
                 $months[$m] = 0.0;
