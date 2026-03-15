@@ -90,6 +90,26 @@
             </div>
         </div>
 
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <strong>Dues Settings</strong>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Control the club start date and monthly dues amount used for arrears.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Club Start Date</label>
+                        <input type="date" name="club_start_date" class="form-control" value="{{ old('club_start_date', $settings['club_start_date']) }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monthly Dues Amount (GHS)</label>
+                        <input type="number" step="0.01" name="monthly_dues_amount" class="form-control" value="{{ old('monthly_dues_amount', $settings['monthly_dues_amount']) }}" required>
+                    </div>
+                    <div class="form-text">Changes affect dues calculations and expected balances.</div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white">

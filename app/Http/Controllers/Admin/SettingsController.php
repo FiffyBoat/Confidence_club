@@ -40,6 +40,8 @@ class SettingsController extends Controller
         $settings = [
             'constitution_path' => Setting::getValue('constitution_path'),
             'constitution_name' => Setting::getValue('constitution_name'),
+            'club_start_date' => Setting::getValue('club_start_date', config('ccm.club_start_date')),
+            'monthly_dues_amount' => Setting::getValue('monthly_dues_amount', (string) config('ccm.monthly_dues_amount', 50)),
         ];
 
         foreach (self::SETTING_KEYS as $key) {
@@ -60,6 +62,8 @@ class SettingsController extends Controller
             'constitution_file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx'],
             'transparency' => ['nullable', 'array'],
             'viewer' => ['nullable', 'array'],
+            'club_start_date' => ['required', 'date'],
+            'monthly_dues_amount' => ['required', 'numeric', 'min:0'],
         ]);
 
         if ($request->hasFile('constitution_file')) {
@@ -87,6 +91,9 @@ class SettingsController extends Controller
             $value = in_array($key, $viewerSelected, true) ? '1' : '0';
             Setting::setValue($key, $value);
         }
+
+        Setting::setValue('club_start_date', $validated['club_start_date']);
+        Setting::setValue('monthly_dues_amount', (string) $validated['monthly_dues_amount']);
 
         return redirect()
             ->route('admin.settings')

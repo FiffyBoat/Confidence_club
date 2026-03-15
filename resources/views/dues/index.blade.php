@@ -4,14 +4,14 @@
 @php
     $arrearsCount = $rows->filter(fn ($row) => $row['balance_end'] > 0)->count();
     $totalOutstanding = $rows->sum('balance_end');
-    $expectedToAsOf = $rows->count() * $asOfMonth * 50;
+    $expectedToAsOf = $rows->sum('due_to_as_of');
 @endphp
 
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
     <div>
         <div class="text-muted small">Member Dues</div>
         <h2 class="mb-1">Monthly Dues</h2>
-        <div class="text-muted">Tracking payments up to {{ $monthsList[$asOfMonth] }} {{ $year }}</div>
+        <div class="text-muted">Tracking payments up to {{ $monthsList[$asOfMonth] }} {{ $year }} (GHS {{ number_format($monthlyRate, 2) }}/month).</div>
     </div>
     <span class="text-muted">{{ now()->format('D, d M Y') }}</span>
 </div>
@@ -151,7 +151,9 @@
                     </td>
                     @foreach($monthsList as $num => $label)
                     <td class="text-end">
-                        @if($row['months'][$num] > 0)
+                        @if($num < $row['start_month'])
+                            <span class="text-muted">-</span>
+                        @elseif($row['months'][$num] > 0)
                             GHS {{ number_format($row['months'][$num], 2) }}
                         @elseif($num <= $asOfMonth)
                             <span class="text-danger">GHS 0.00</span>

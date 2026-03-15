@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDuesRequest;
 use App\Models\Contribution;
 use App\Models\Member;
+use App\Models\Setting;
 use App\Services\ReceiptService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +24,11 @@ class DuesController extends Controller
         $year = (int) $request->input('year', now()->year);
         $asOfMonth = (int) $request->input('as_of', now()->month);
         $asOfMonth = max(1, min(12, $asOfMonth));
+        $monthlyRate = (float) (Setting::getValue('monthly_dues_amount')
+            ?? config('ccm.monthly_dues_amount', 50));
+        $clubStartDateValue = Setting::getValue('club_start_date')
+            ?? config('ccm.club_start_date', '2025-10-01');
+        $clubStartDate = Carbon::parse($clubStartDateValue)->startOfMonth();
 
         $members = Member::orderBy('full_name')->get();
 
@@ -56,14 +62,36 @@ class DuesController extends Controller
                 $paidToAsOf += $months[$m];
             }
 
-            $dueToAsOf = $asOfMonth * 50;
+            $memberStart = $clubStartDate;
+            if ($member->join_date) {
+                $memberStart = $member->join_date->greaterThan($clubStartDate)
+                    ? $member->join_date
+                    : $clubStartDate;
+            }
+
+            $memberStart = $memberStart->copy()->startOfMonth();
+            $monthsDue = 0;
+            if ($year > $memberStart->year || ($year === $memberStart->year && $asOfMonth >= $memberStart->month)) {
+                $startMonth = $year === $memberStart->year ? $memberStart->month : 1;
+                $monthsDue = max(0, $asOfMonth - $startMonth + 1);
+            }
+
+            $dueToAsOf = $monthsDue * $monthlyRate;
             $balanceEnd = max(0, $dueToAsOf - $paidToAsOf);
-            $balanceNext = $balanceEnd + 50;
+            $nextMonthActive = $year > $memberStart->year
+                || ($year === $memberStart->year && $asOfMonth >= max(1, $memberStart->month - 1));
+            $balanceNext = $balanceEnd + ($nextMonthActive ? $monthlyRate : 0);
+            $startMonthForYear = $year < $memberStart->year
+                ? 13
+                : ($year === $memberStart->year ? $memberStart->month : 1);
 
             return [
                 'member' => $member,
                 'months' => $months,
                 'paid_to_as_of' => $paidToAsOf,
+                'due_to_as_of' => $dueToAsOf,
+                'months_due' => $monthsDue,
+                'start_month' => $startMonthForYear,
                 'balance_end' => $balanceEnd,
                 'balance_next' => $balanceNext,
                 'year_total' => array_sum($months),
@@ -85,7 +113,7 @@ class DuesController extends Controller
             12 => 'Dec',
         ];
 
-        return view('dues.index', compact('rows', 'monthsList', 'year', 'asOfMonth', 'members', 'duesPayments'));
+        return view('dues.index', compact('rows', 'monthsList', 'year', 'asOfMonth', 'members', 'duesPayments', 'monthlyRate'));
     }
 
     public function store(StoreDuesRequest $request): RedirectResponse
