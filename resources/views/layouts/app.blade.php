@@ -153,6 +153,15 @@
             opacity: 0.85;
         }
 
+        .sidebar-section {
+            margin: 0.8rem 0 0.35rem;
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+        }
+
         .content-shell {
             max-width: 1260px;
             margin: 0 auto;
@@ -489,9 +498,14 @@
         <hr>
         <nav class="sidebar-nav" aria-label="Primary">
             @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'treasurer']))
+                <div class="sidebar-section">Overview</div>
                 <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+
+                <div class="sidebar-section">Members</div>
                 <a href="{{ route('members.index') }}" class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
                 <a href="{{ route('birthdays.index') }}" class="sidebar-link {{ request()->routeIs('birthdays.*') ? 'active' : '' }}"><i class="bi bi-balloon"></i>Birthdays</a>
+
+                <div class="sidebar-section">Finance</div>
                 <a href="{{ route('dues.index') }}" class="sidebar-link {{ request()->routeIs('dues.*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i>Dues</a>
                 <a href="{{ route('contributions.index') }}" class="sidebar-link {{ request()->routeIs('contributions.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i>Contributions</a>
                 <a href="{{ route('special-contributions.index') }}" class="sidebar-link {{ request()->routeIs('special-contributions.*') ? 'active' : '' }}"><i class="bi bi-stars"></i>Special Contributions</a>
@@ -500,18 +514,25 @@
                 <a href="{{ route('expenses.index') }}" class="sidebar-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i>Expenses</a>
                 <a href="{{ route('loans.index') }}" class="sidebar-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="bi bi-bank"></i>Loans</a>
                 <a href="{{ route('receipts.index') }}" class="sidebar-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i>Receipts</a>
+
+                <div class="sidebar-section">Reports</div>
                 <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i>Reports</a>
+                <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
             @else
+                <div class="sidebar-section">Public</div>
                 <a href="{{ route('viewer.dashboard') }}" class="sidebar-link {{ request()->routeIs('viewer.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Viewer Dashboard</a>
                 <a href="{{ route('viewer.members') }}" class="sidebar-link {{ request()->routeIs('viewer.members') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
+                <div class="sidebar-section">Transparency</div>
+                <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
             @endif
             @auth
+                <div class="sidebar-section">Resources</div>
                 <a href="{{ route('role-guide') }}" class="sidebar-link {{ request()->routeIs('role-guide*') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>Role Guide</a>
                 <a href="{{ route('help.index') }}" class="sidebar-link {{ request()->routeIs('help.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>User Manual</a>
                 <a href="{{ route('constitution.index') }}" class="sidebar-link {{ request()->routeIs('constitution.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i>Constitution</a>
             @endauth
-            <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
             @if(auth()->check() && auth()->user()->role === 'admin')
+                <div class="sidebar-section">Admin</div>
                 <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
             @endif
         </nav>
