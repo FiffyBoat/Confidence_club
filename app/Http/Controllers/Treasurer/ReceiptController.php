@@ -108,6 +108,23 @@ class ReceiptController extends Controller
         );
     }
 
+    public function regenerateAll(ReceiptService $receiptService)
+    {
+        set_time_limit(0);
+        $regenerated = 0;
+
+        Receipt::orderBy('id')->chunk(100, function ($receipts) use ($receiptService, &$regenerated) {
+            foreach ($receipts as $receipt) {
+                $receiptService->regeneratePdf($receipt);
+                $regenerated++;
+            }
+        });
+
+        return redirect()
+            ->route('receipts.index')
+            ->with('status', "Regenerated {$regenerated} receipts.");
+    }
+
     private function resolveReceiptPath(Receipt $receipt, ReceiptService $receiptService): ?string
     {
         $path = $receipt->pdf_path ?: 'receipts/'.$receipt->receipt_number.'.pdf';

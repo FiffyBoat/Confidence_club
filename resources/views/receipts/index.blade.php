@@ -7,7 +7,15 @@
         <h2 class="mb-1">Receipts</h2>
         <div class="text-muted">View generated receipts and download PDF copies.</div>
     </div>
+    <form action="{{ route('receipts.regenerate') }}" method="POST" onsubmit="return confirm('Regenerate all receipt PDFs now? This may take a moment.');">
+        @csrf
+        <button class="btn btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>Regenerate PDFs</button>
+    </form>
 </div>
+
+@if(session('status'))
+    <div class="alert alert-success">{{ session('status') }}</div>
+@endif
 
 <div class="card shadow-sm border-0">
     <div class="card-body">
