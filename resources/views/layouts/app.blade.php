@@ -153,13 +153,52 @@
             opacity: 0.85;
         }
 
-        .sidebar-section {
-            margin: 0.8rem 0 0.35rem;
-            font-size: 0.65rem;
-            letter-spacing: 0.2em;
+        .sidebar-group {
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.6rem;
+        }
+
+        .sidebar-group:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-group-toggle {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.68rem;
+            letter-spacing: 0.22em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.6);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-group-toggle i {
+            font-size: 0.85rem;
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-group-toggle:hover {
+            color: #fff;
+        }
+
+        .sidebar-group-menu {
+            display: none;
+            margin-top: 0.4rem;
+        }
+
+        .sidebar-group.is-open .sidebar-group-menu {
+            display: block;
+        }
+
+        .sidebar-group.is-open .sidebar-group-toggle i {
+            transform: rotate(180deg);
         }
 
         .content-shell {
@@ -498,42 +537,87 @@
         <hr>
         <nav class="sidebar-nav" aria-label="Primary">
             @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'treasurer']))
-                <div class="sidebar-section">Overview</div>
-                <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                @php
+                    $overviewActive = request()->routeIs('dashboard');
+                    $membersActive = request()->routeIs('members.*', 'birthdays.*');
+                    $financeActive = request()->routeIs('dues.*', 'contributions.*', 'special-contributions.*', 'donations.*', 'incomes.*', 'expenses.*', 'loans.*', 'receipts.*');
+                    $reportsActive = request()->routeIs('reports.*', 'transparency');
+                    $resourcesActive = request()->routeIs('role-guide*', 'help.*', 'constitution.*');
+                    $adminActive = request()->routeIs('admin.settings*');
+                @endphp
 
-                <div class="sidebar-section">Members</div>
-                <a href="{{ route('members.index') }}" class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
-                <a href="{{ route('birthdays.index') }}" class="sidebar-link {{ request()->routeIs('birthdays.*') ? 'active' : '' }}"><i class="bi bi-balloon"></i>Birthdays</a>
+                <div class="sidebar-group {{ $overviewActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $overviewActive ? 'true' : 'false' }}">Overview <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Dashboard</a>
+                    </div>
+                </div>
 
-                <div class="sidebar-section">Finance</div>
-                <a href="{{ route('dues.index') }}" class="sidebar-link {{ request()->routeIs('dues.*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i>Dues</a>
-                <a href="{{ route('contributions.index') }}" class="sidebar-link {{ request()->routeIs('contributions.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i>Contributions</a>
-                <a href="{{ route('special-contributions.index') }}" class="sidebar-link {{ request()->routeIs('special-contributions.*') ? 'active' : '' }}"><i class="bi bi-stars"></i>Special Contributions</a>
-                <a href="{{ route('donations.index') }}" class="sidebar-link {{ request()->routeIs('donations.*') ? 'active' : '' }}"><i class="bi bi-heart"></i>Donations</a>
-                <a href="{{ route('incomes.index') }}" class="sidebar-link {{ request()->routeIs('incomes.*') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i>Income</a>
-                <a href="{{ route('expenses.index') }}" class="sidebar-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i>Expenses</a>
-                <a href="{{ route('loans.index') }}" class="sidebar-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="bi bi-bank"></i>Loans</a>
-                <a href="{{ route('receipts.index') }}" class="sidebar-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i>Receipts</a>
+                <div class="sidebar-group {{ $membersActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $membersActive ? 'true' : 'false' }}">Members <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('members.index') }}" class="sidebar-link {{ request()->routeIs('members.*') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
+                        <a href="{{ route('birthdays.index') }}" class="sidebar-link {{ request()->routeIs('birthdays.*') ? 'active' : '' }}"><i class="bi bi-balloon"></i>Birthdays</a>
+                    </div>
+                </div>
 
-                <div class="sidebar-section">Reports</div>
-                <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i>Reports</a>
-                <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
+                <div class="sidebar-group {{ $financeActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $financeActive ? 'true' : 'false' }}">Finance <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('dues.index') }}" class="sidebar-link {{ request()->routeIs('dues.*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i>Dues</a>
+                        <a href="{{ route('contributions.index') }}" class="sidebar-link {{ request()->routeIs('contributions.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i>Contributions</a>
+                        <a href="{{ route('special-contributions.index') }}" class="sidebar-link {{ request()->routeIs('special-contributions.*') ? 'active' : '' }}"><i class="bi bi-stars"></i>Special Contributions</a>
+                        <a href="{{ route('donations.index') }}" class="sidebar-link {{ request()->routeIs('donations.*') ? 'active' : '' }}"><i class="bi bi-heart"></i>Donations</a>
+                        <a href="{{ route('incomes.index') }}" class="sidebar-link {{ request()->routeIs('incomes.*') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i>Income</a>
+                        <a href="{{ route('expenses.index') }}" class="sidebar-link {{ request()->routeIs('expenses.*') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i>Expenses</a>
+                        <a href="{{ route('loans.index') }}" class="sidebar-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="bi bi-bank"></i>Loans</a>
+                        <a href="{{ route('receipts.index') }}" class="sidebar-link {{ request()->routeIs('receipts.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i>Receipts</a>
+                    </div>
+                </div>
+
+                <div class="sidebar-group {{ $reportsActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $reportsActive ? 'true' : 'false' }}">Reports <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i>Reports</a>
+                        <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
+                    </div>
+                </div>
             @else
-                <div class="sidebar-section">Public</div>
-                <a href="{{ route('viewer.dashboard') }}" class="sidebar-link {{ request()->routeIs('viewer.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Viewer Dashboard</a>
-                <a href="{{ route('viewer.members') }}" class="sidebar-link {{ request()->routeIs('viewer.members') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
-                <div class="sidebar-section">Transparency</div>
-                <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
+                @php
+                    $publicActive = request()->routeIs('viewer.dashboard', 'viewer.members');
+                    $publicTransparencyActive = request()->routeIs('transparency');
+                @endphp
+                <div class="sidebar-group {{ $publicActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $publicActive ? 'true' : 'false' }}">Public <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('viewer.dashboard') }}" class="sidebar-link {{ request()->routeIs('viewer.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Viewer Dashboard</a>
+                        <a href="{{ route('viewer.members') }}" class="sidebar-link {{ request()->routeIs('viewer.members') ? 'active' : '' }}"><i class="bi bi-people"></i>Members</a>
+                    </div>
+                </div>
+                <div class="sidebar-group {{ $publicTransparencyActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $publicTransparencyActive ? 'true' : 'false' }}">Transparency <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('transparency') }}" class="sidebar-link {{ request()->routeIs('transparency') ? 'active' : '' }}"><i class="bi bi-eye"></i>Transparency</a>
+                    </div>
+                </div>
             @endif
             @auth
-                <div class="sidebar-section">Resources</div>
-                <a href="{{ route('role-guide') }}" class="sidebar-link {{ request()->routeIs('role-guide*') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>Role Guide</a>
-                <a href="{{ route('help.index') }}" class="sidebar-link {{ request()->routeIs('help.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>User Manual</a>
-                <a href="{{ route('constitution.index') }}" class="sidebar-link {{ request()->routeIs('constitution.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i>Constitution</a>
+                <div class="sidebar-group {{ $resourcesActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $resourcesActive ? 'true' : 'false' }}">Resources <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('role-guide') }}" class="sidebar-link {{ request()->routeIs('role-guide*') ? 'active' : '' }}"><i class="bi bi-shield-check"></i>Role Guide</a>
+                        <a href="{{ route('help.index') }}" class="sidebar-link {{ request()->routeIs('help.*') ? 'active' : '' }}"><i class="bi bi-journal-text"></i>User Manual</a>
+                        <a href="{{ route('constitution.index') }}" class="sidebar-link {{ request()->routeIs('constitution.*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i>Constitution</a>
+                    </div>
+                </div>
             @endauth
             @if(auth()->check() && auth()->user()->role === 'admin')
-                <div class="sidebar-section">Admin</div>
-                <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
+                <div class="sidebar-group {{ $adminActive ? 'is-open' : '' }}">
+                    <button class="sidebar-group-toggle" type="button" aria-expanded="{{ $adminActive ? 'true' : 'false' }}">Admin <i class="bi bi-chevron-down"></i></button>
+                    <div class="sidebar-group-menu">
+                        <a href="{{ route('admin.settings') }}" class="sidebar-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i>Settings</a>
+                    </div>
+                </div>
             @endif
         </nav>
     </div>
@@ -598,6 +682,7 @@
         const sidebar = document.querySelector('.sidebar');
         const toggle = document.getElementById('sidebarToggle');
         const backdrop = document.querySelector('.sidebar-backdrop');
+        const groupToggles = document.querySelectorAll('.sidebar-group-toggle');
 
         if (!sidebar || !toggle || !backdrop) {
             return;
@@ -631,6 +716,18 @@
             if (window.innerWidth >= 992) {
                 closeSidebar();
             }
+        });
+
+        groupToggles.forEach((button) => {
+            button.addEventListener('click', () => {
+                const group = button.closest('.sidebar-group');
+                if (!group) {
+                    return;
+                }
+
+                group.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', group.classList.contains('is-open') ? 'true' : 'false');
+            });
         });
     });
 </script>
