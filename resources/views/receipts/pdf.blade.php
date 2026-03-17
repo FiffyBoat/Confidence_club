@@ -8,11 +8,11 @@
         body { font-family: DejaVu Sans, Arial, sans-serif; color: #1d1d1d; font-size: 12px; }
         .watermark {
             position: fixed;
-            top: 40%;
-            left: 10%;
+            top: 50%;
+            left: 50%;
             font-size: 120px;
             color: rgba(176, 0, 32, 0.08);
-            transform: rotate(-28deg);
+            transform: translate(-50%, -50%) rotate(-28deg);
             font-weight: 700;
             letter-spacing: 10px;
             z-index: 0;
