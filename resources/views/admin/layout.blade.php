@@ -152,6 +152,53 @@
             opacity: 0.85;
         }
 
+        .admin-group {
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.6rem;
+        }
+
+        .admin-group:last-child {
+            border-bottom: none;
+        }
+
+        .admin-group-toggle {
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 0.4rem 0.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.68rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.2s ease;
+        }
+
+        .admin-group-toggle i {
+            font-size: 0.85rem;
+            transition: transform 0.2s ease;
+        }
+
+        .admin-group-toggle:hover {
+            color: #fff;
+        }
+
+        .admin-group-menu {
+            display: none;
+            margin-top: 0.4rem;
+        }
+
+        .admin-group.is-open .admin-group-menu {
+            display: block;
+        }
+
+        .admin-group.is-open .admin-group-toggle i {
+            transform: rotate(180deg);
+        }
         .content-shell {
             max-width: 1200px;
             margin: 0 auto;
@@ -482,14 +529,57 @@
         </div>
         <hr>
         <nav class="admin-nav" aria-label="Admin">
-            <a href="{{ route('admin.dashboard') }}" class="admin-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Overview</a>
-            <a href="{{ route('admin.users.index') }}" class="admin-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>User Management</a>
-            <a href="{{ route('admin.activity-logs.index') }}" class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>Activity Logs</a>
-            <a href="{{ route('admin.settings') }}" class="admin-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-sliders2"></i>Settings</a>
-            <a href="{{ route('admin.announcements.index') }}" class="admin-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>Announcements</a>
-            <a href="{{ route('admin.meetings.index') }}" class="admin-link {{ request()->routeIs('admin.meetings*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>Meetings</a>
-            <hr>
-            <a href="{{ route('dashboard') }}" class="admin-link"><i class="bi bi-grid-1x2"></i>Main App</a>
+            @php
+                $overviewActive = request()->routeIs('admin.dashboard');
+                $peopleActive = request()->routeIs('admin.users.*');
+                $logsActive = request()->routeIs('admin.activity-logs.*');
+                $settingsActive = request()->routeIs('admin.settings*');
+                $announcementsActive = request()->routeIs('admin.announcements*');
+                $meetingsActive = request()->routeIs('admin.meetings*');
+            @endphp
+
+            <div class="admin-group {{ $overviewActive ? 'is-open' : '' }}">
+                <button class="admin-group-toggle" type="button" aria-expanded="{{ $overviewActive ? 'true' : 'false' }}">Overview <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('admin.dashboard') }}" class="admin-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i>Overview</a>
+                </div>
+            </div>
+
+            <div class="admin-group {{ $peopleActive ? 'is-open' : '' }}">
+                <button class="admin-group-toggle" type="button" aria-expanded="{{ $peopleActive ? 'true' : 'false' }}">People <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('admin.users.index') }}" class="admin-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-people"></i>User Management</a>
+                </div>
+            </div>
+
+            <div class="admin-group {{ $logsActive ? 'is-open' : '' }}">
+                <button class="admin-group-toggle" type="button" aria-expanded="{{ $logsActive ? 'true' : 'false' }}">Logs <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('admin.activity-logs.index') }}" class="admin-link {{ request()->routeIs('admin.activity-logs.*') ? 'active' : '' }}"><i class="bi bi-clock-history"></i>Activity Logs</a>
+                </div>
+            </div>
+
+            <div class="admin-group {{ $settingsActive ? 'is-open' : '' }}">
+                <button class="admin-group-toggle" type="button" aria-expanded="{{ $settingsActive ? 'true' : 'false' }}">Settings <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('admin.settings') }}" class="admin-link {{ request()->routeIs('admin.settings*') ? 'active' : '' }}"><i class="bi bi-sliders2"></i>Settings</a>
+                </div>
+            </div>
+
+            <div class="admin-group {{ ($announcementsActive || $meetingsActive) ? 'is-open' : '' }}">
+                <button class="admin-group-toggle" type="button" aria-expanded="{{ ($announcementsActive || $meetingsActive) ? 'true' : 'false' }}">Comms <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('admin.announcements.index') }}" class="admin-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}"><i class="bi bi-megaphone"></i>Announcements</a>
+                    <a href="{{ route('admin.meetings.index') }}" class="admin-link {{ request()->routeIs('admin.meetings*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i>Meetings</a>
+                </div>
+            </div>
+
+            <div class="admin-group is-open">
+                <button class="admin-group-toggle" type="button" aria-expanded="true">Navigation <i class="bi bi-chevron-down"></i></button>
+                <div class="admin-group-menu">
+                    <a href="{{ route('dashboard') }}" class="admin-link"><i class="bi bi-grid-1x2"></i>Main App</a>
+                </div>
+            </div>
         </nav>
     </aside>
     <div class="admin-backdrop d-lg-none"></div>
@@ -549,6 +639,7 @@
         const sidebar = document.querySelector('.admin-sidebar');
         const toggle = document.getElementById('adminSidebarToggle');
         const backdrop = document.querySelector('.admin-backdrop');
+        const groupToggles = document.querySelectorAll('.admin-group-toggle');
 
         if (!sidebar || !toggle || !backdrop) {
             return;
@@ -582,6 +673,18 @@
             if (window.innerWidth >= 992) {
                 closeSidebar();
             }
+        });
+
+        groupToggles.forEach((button) => {
+            button.addEventListener('click', () => {
+                const group = button.closest('.admin-group');
+                if (!group) {
+                    return;
+                }
+
+                group.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', group.classList.contains('is-open') ? 'true' : 'false');
+            });
         });
     });
 </script>

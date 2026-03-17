@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>{{ $title ?? 'Receipt' }}</title>
     <style>
-        @page { margin: 28px 32px; }
+        @page { size: A5; margin: 24px 28px; }
         body { font-family: DejaVu Sans, Arial, sans-serif; color: #1d1d1d; font-size: 12px; }
         .watermark {
             position: fixed;
