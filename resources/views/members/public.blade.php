@@ -21,9 +21,18 @@
         <form method="GET" class="row g-2 align-items-center">
             <div class="col-md-8">
                 <label class="form-label small text-muted mb-1">Search</label>
-                <div class="input-group">
+                <div class="input-group" data-member-autocomplete-wrapper>
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control" placeholder="Search name, membership ID, phone, or email" value="{{ request('q') }}">
+                    <input
+                        type="text"
+                        name="q"
+                        class="form-control"
+                        placeholder="Search name, membership ID, phone, or email"
+                        value="{{ request('q') }}"
+                        autocomplete="off"
+                        data-member-autocomplete
+                        data-autocomplete-url="{{ route('viewer.members.suggestions') }}"
+                    >
                 </div>
             </div>
             <div class="col-md-4 d-flex gap-2 align-items-end">

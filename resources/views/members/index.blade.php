@@ -19,9 +19,18 @@
     <div class="card-body">
         <form action="{{ route('members.index') }}" method="GET" class="row g-2 mb-3 align-items-end">
             <div class="col-md-8">
-                <div class="input-group">
+                <div class="input-group" data-member-autocomplete-wrapper>
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control" placeholder="Search by name, membership ID, phone" value="{{ $search ?? '' }}">
+                    <input
+                        type="text"
+                        name="q"
+                        class="form-control"
+                        placeholder="Search by name, membership ID, phone"
+                        value="{{ $search ?? '' }}"
+                        autocomplete="off"
+                        data-member-autocomplete
+                        data-autocomplete-url="{{ route('members.suggestions') }}"
+                    >
                     @if(!empty($search))
                         <a href="{{ route('members.index') }}" class="btn btn-outline-secondary">Clear</a>
                     @endif

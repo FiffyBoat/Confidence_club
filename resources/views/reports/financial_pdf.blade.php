@@ -24,18 +24,28 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            object-fit: cover;
+            display: inline-block;
+            background: #b00020;
+            color: #fff;
+            text-align: center;
+            line-height: 72px;
+            font-weight: 700;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
     @php
         $logoPath = public_path('images/ccm-logo.png');
-        $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
+        $logoData = extension_loaded('gd') && file_exists($logoPath)
+            ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+            : null;
     @endphp
     <div class="header">
         @if($logoData)
             <img src="{{ $logoData }}" alt="Club Logo" class="logo">
+        @else
+            <div class="logo">CCM</div>
         @endif
         <div>
             <div class="title">{{ config('app.name', 'CONFIDENCE CLUB MEMBERS') }} - Detailed Financial Report</div>

@@ -34,6 +34,7 @@ Route::get('/transparency', [TransparencyController::class, 'index'])->name('tra
 
 Route::get('/viewer', [DashboardController::class, 'viewer'])->name('viewer.dashboard');
 Route::get('/viewer/members', [DashboardController::class, 'viewerMembers'])->name('viewer.members');
+Route::get('/viewer/members/suggestions', [DashboardController::class, 'viewerMemberSuggestions'])->name('viewer.members.suggestions');
 Route::get('/user-manual', [HelpController::class, 'manual'])->name('help.manual');
 Route::get('/user-manual/pdf', [HelpController::class, 'manualPdf'])->name('help.manual.pdf');
 
@@ -77,10 +78,15 @@ Route::get('constitution', [ConstitutionController::class, 'index'])->name('cons
 Route::get('constitution/download', [ConstitutionController::class, 'download'])->name('constitution.download');
 
 Route::middleware(['auth', 'active', 'role:admin,treasurer'])->group(function () {
+    Route::get('members/suggestions', [MemberController::class, 'suggestions'])->name('members.suggestions');
+    Route::get('members/{member}/statement/print', [MemberController::class, 'statementPrint'])->name('members.statement.print');
+    Route::get('members/{member}/statement/pdf', [MemberController::class, 'statementPdf'])->name('members.statement.pdf');
     Route::resource('members', MemberController::class)->except(['index']);
     Route::delete('members/{member}/force', [MemberController::class, 'forceDestroy'])->name('members.force-destroy');
     Route::get('dues', [DuesController::class, 'index'])->name('dues.index');
     Route::post('dues', [DuesController::class, 'store'])->name('dues.store');
+    Route::get('dues/arrears.csv', [DuesController::class, 'arrearsCsv'])->name('dues.arrears.csv');
+    Route::get('dues/arrears/print', [DuesController::class, 'arrearsPrint'])->name('dues.arrears.print');
     Route::resource('contributions', ContributionController::class)->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
     Route::resource('special-contributions', SpecialContributionController::class)->only(['index', 'store']);
     Route::resource('donations', DonationController::class)->only(['index', 'store', 'edit', 'update', 'destroy']);

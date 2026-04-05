@@ -12,7 +12,10 @@ use App\Models\Meeting;
 use App\Models\Member;
 use App\Models\Receipt;
 use App\Models\Setting;
+use App\Repositories\MemberRepository;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -85,7 +88,7 @@ class DashboardController extends Controller
         return $this->viewerDashboard(Carbon::today());
     }
 
-    public function viewerMembers(\Illuminate\Http\Request $request): \Illuminate\View\View
+    public function viewerMembers(Request $request): \Illuminate\View\View
     {
         $membersQuery = Member::query()
             ->select('membership_id', 'full_name', 'phone', 'email', 'status')
@@ -107,6 +110,13 @@ class DashboardController extends Controller
             ->withQueryString();
 
         return view('members.public', compact('members'));
+    }
+
+    public function viewerMemberSuggestions(Request $request, MemberRepository $members): JsonResponse
+    {
+        return response()->json([
+            'suggestions' => $members->searchSuggestions($request->input('q')),
+        ]);
     }
 
     private function viewerDashboard(Carbon $today)

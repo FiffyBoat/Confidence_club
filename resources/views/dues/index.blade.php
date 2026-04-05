@@ -2,9 +2,10 @@
 
 @section('content')
 @php
-    $arrearsCount = $rows->filter(fn ($row) => $row['balance_end'] > 0)->count();
-    $totalOutstanding = $rows->sum('balance_end');
+    $arrearsCount = $outstandingRows->count();
+    $totalOutstanding = $outstandingRows->sum('balance_end');
     $expectedToAsOf = $rows->sum('due_to_as_of');
+    $noPaymentCount = $outstandingRows->filter(fn ($row) => $row['payment_status'] === 'none')->count();
 @endphp
 
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
@@ -17,19 +18,25 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-label">Members in Arrears</div>
             <div class="stat-value">{{ $arrearsCount }}</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-label">No Dues Paid Yet</div>
+            <div class="stat-value">{{ $noPaymentCount }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-label">Outstanding Balance</div>
             <div class="stat-value">GHS {{ number_format($totalOutstanding, 2) }}</div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-label">Expected Dues (to date)</div>
             <div class="stat-value">GHS {{ number_format($expectedToAsOf, 2) }}</div>
@@ -121,6 +128,83 @@
                 </form>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Members With Outstanding Dues</strong>
+            <div class="text-muted small">As of {{ $monthsList[$asOfMonth] }} {{ $year }}</div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('dues.arrears.print', ['year' => $year, 'as_of' => $asOfMonth]) }}" class="btn btn-primary btn-sm" target="_blank">
+                <i class="bi bi-printer me-1"></i>View / Print
+            </a>
+            <a href="{{ route('dues.arrears.csv', ['year' => $year, 'as_of' => $asOfMonth]) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-download me-1"></i>Download CSV
+            </a>
+            <span class="badge text-bg-danger-subtle border border-danger-subtle text-danger-emphasis">
+                {{ $arrearsCount }} owing
+            </span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Status</th>
+                    <th class="text-end">Months Due</th>
+                    <th class="text-end">Paid To Date</th>
+                    <th>Unpaid Months</th>
+                    <th class="text-end">Amount Owed</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($outstandingRows as $row)
+                <tr>
+                    <td>
+                        <div class="fw-semibold">{{ $row['member']->full_name }}</div>
+                        <div class="text-muted small">{{ $row['member']->membership_id }}</div>
+                    </td>
+                    <td>
+                        @if($row['payment_status'] === 'none')
+                            <span class="badge text-bg-danger">No dues paid</span>
+                        @elseif($row['payment_status'] === 'partial')
+                            <span class="badge text-bg-warning">Partly paid</span>
+                        @else
+                            <span class="badge text-bg-success">Up to date</span>
+                        @endif
+                    </td>
+                    <td class="text-end">{{ $row['months_due'] }}</td>
+                    <td class="text-end">GHS {{ number_format($row['paid_to_as_of'], 2) }}</td>
+                    <td>
+                        @if($row['arrears_months_count'] > 0)
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach($row['arrears_months'] as $arrearsMonth)
+                                    <span class="badge text-bg-light border">
+                                        {{ $arrearsMonth['label'] }}{{ $arrearsMonth['is_partial'] ? ' (part)' : '' }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @else
+                            <span class="text-muted">None</span>
+                        @endif
+                    </td>
+                    <td class="text-end fw-semibold text-danger">GHS {{ number_format($row['balance_end'], 2) }}</td>
+                    <td class="text-end">
+                        <a href="{{ route('members.show', $row['member']) }}" class="btn btn-outline-secondary btn-sm">Open Member</a>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7">No members are owing dues for this period.</td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 

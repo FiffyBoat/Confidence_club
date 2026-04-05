@@ -19,12 +19,18 @@
         }
         .header-table { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
         .header-table td { vertical-align: middle; }
-        .logo {
+        .logo-image {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+        }
+        .logo-fallback {
             width: 84px;
             height: 84px;
             border-radius: 50%;
             background: #b00020;
             color: #fff;
+            display: inline-block;
             text-align: center;
             line-height: 84px;
             font-weight: 700;
@@ -111,7 +117,9 @@
     $paymentMethodLabel = $paymentMethod ? strtoupper($paymentMethod) : '-';
     $recordedByLabel = $recordedBy ?? '-';
     $logoPath = public_path('images/ccm-logo.png');
-    $logoData = file_exists($logoPath) ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath)) : null;
+    $logoData = extension_loaded('gd') && file_exists($logoPath)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($logoPath))
+        : null;
 @endphp
 
 <div class="watermark">PAID</div>
@@ -120,9 +128,9 @@
     <tr>
         <td style="width: 110px;">
             @if($logoData)
-                <img src="{{ $logoData }}" alt="Club Logo" style="width:84px;height:84px;border-radius:50%;object-fit:cover;">
+                <img src="{{ $logoData }}" alt="Club Logo" class="logo-image">
             @else
-                <div class="logo">CCM</div>
+                <div class="logo-fallback">CCM</div>
             @endif
         </td>
         <td>

@@ -1,6 +1,92 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    .reports-bar-chart {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+        gap: 1rem;
+        align-items: end;
+        min-height: 320px;
+    }
+
+    .reports-bar-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .reports-bar-canvas {
+        position: relative;
+        width: 100%;
+        height: 220px;
+        padding: 1rem 0.5rem 2rem;
+        border-radius: 18px;
+        background:
+            linear-gradient(to top, rgba(176, 0, 32, 0.04), rgba(176, 0, 32, 0.01)),
+            repeating-linear-gradient(
+                to top,
+                rgba(31, 31, 31, 0.08) 0,
+                rgba(31, 31, 31, 0.08) 1px,
+                transparent 1px,
+                transparent 25%
+            );
+        border: 1px solid rgba(176, 0, 32, 0.08);
+        display: flex;
+        align-items: end;
+        justify-content: center;
+    }
+
+    .reports-bar-stack {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: end;
+        justify-content: center;
+        gap: 0.4rem;
+    }
+
+    .reports-bar {
+        width: 24px;
+        min-height: 6px;
+        border-radius: 999px 999px 8px 8px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .reports-bar-contrib { background: linear-gradient(180deg, #6aa4ff 0%, #0d6efd 100%); }
+    .reports-bar-income { background: linear-gradient(180deg, #7ce2b8 0%, #198754 100%); }
+    .reports-bar-expenses { background: linear-gradient(180deg, #ff8f8f 0%, #dc3545 100%); }
+
+    .reports-bar-axis {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: 14px;
+        border-top: 1px solid rgba(31, 31, 31, 0.16);
+    }
+
+    .reports-bar-label {
+        text-align: center;
+        font-weight: 600;
+        color: #5b5b5b;
+        font-size: 0.84rem;
+    }
+
+    .reports-bar-values {
+        width: 100%;
+        display: grid;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+        text-align: center;
+    }
+
+    .reports-bar-values .contrib { color: #0d6efd; }
+    .reports-bar-values .income { color: #198754; }
+    .reports-bar-values .expenses { color: #dc3545; }
+</style>
+
 <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-4 gap-3">
     <div>
         <div class="text-muted small">Analytics</div>
@@ -60,27 +146,40 @@
             $maxValue = $chartMax > 0 ? $chartMax : 1;
         @endphp
         @forelse($monthlyChart as $item)
-            <div class="mb-3">
-                <div class="small text-muted mb-1">{{ $item['label'] }}</div>
-                <div class="d-flex align-items-center gap-3">
-                    <div class="flex-grow-1">
-                        <div class="bg-light rounded" style="height: 8px;">
-                            <div class="bg-primary rounded" style="height: 8px; width: {{ round(($item['contrib'] / $maxValue) * 100, 2) }}%;"></div>
-                        </div>
-                        <div class="bg-light rounded mt-1" style="height: 8px;">
-                            <div class="bg-success rounded" style="height: 8px; width: {{ round(($item['income'] / $maxValue) * 100, 2) }}%;"></div>
-                        </div>
-                        <div class="bg-light rounded mt-1" style="height: 8px;">
-                            <div class="bg-danger rounded" style="height: 8px; width: {{ round(($item['expenses'] / $maxValue) * 100, 2) }}%;"></div>
-                        </div>
+            @if($loop->first)
+                <div class="reports-bar-chart">
+            @endif
+            <div class="reports-bar-group">
+                <div class="reports-bar-canvas">
+                    <div class="reports-bar-stack">
+                        <div
+                            class="reports-bar reports-bar-contrib"
+                            style="height: {{ max(6, round(($item['contrib'] / $maxValue) * 160, 2)) }}px;"
+                            title="Contributions: GHS {{ number_format($item['contrib'], 2) }}"
+                        ></div>
+                        <div
+                            class="reports-bar reports-bar-income"
+                            style="height: {{ max(6, round(($item['income'] / $maxValue) * 160, 2)) }}px;"
+                            title="Income: GHS {{ number_format($item['income'], 2) }}"
+                        ></div>
+                        <div
+                            class="reports-bar reports-bar-expenses"
+                            style="height: {{ max(6, round(($item['expenses'] / $maxValue) * 160, 2)) }}px;"
+                            title="Expenses: GHS {{ number_format($item['expenses'], 2) }}"
+                        ></div>
                     </div>
-                    <div class="text-end small">
-                        <div class="text-primary">C {{ number_format($item['contrib'], 0) }}</div>
-                        <div class="text-success">I {{ number_format($item['income'], 0) }}</div>
-                        <div class="text-danger">E {{ number_format($item['expenses'], 0) }}</div>
-                    </div>
+                    <div class="reports-bar-axis"></div>
+                </div>
+                <div class="reports-bar-label">{{ $item['label'] }}</div>
+                <div class="reports-bar-values">
+                    <div class="contrib">C {{ number_format($item['contrib'], 0) }}</div>
+                    <div class="income">I {{ number_format($item['income'], 0) }}</div>
+                    <div class="expenses">E {{ number_format($item['expenses'], 0) }}</div>
                 </div>
             </div>
+            @if($loop->last)
+                </div>
+            @endif
         @empty
             <div class="text-muted">No monthly data available.</div>
         @endforelse

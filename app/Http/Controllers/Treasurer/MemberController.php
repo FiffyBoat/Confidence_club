@@ -8,7 +8,11 @@ use App\Http\Requests\UpdateMemberRequest;
 use App\Models\ActivityLog;
 use App\Models\Member;
 use App\Repositories\MemberRepository;
+use App\Services\MemberStatementService;
 use App\Services\ReceiptService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Response;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,7 +21,8 @@ class MemberController extends Controller
 {
     public function __construct(
         private readonly MemberRepository $members,
-        private readonly ReceiptService $receiptService
+        private readonly ReceiptService $receiptService,
+        private readonly MemberStatementService $memberStatementService
     )
     {
     }
@@ -31,6 +36,15 @@ class MemberController extends Controller
         $members = $this->members->paginateWithSearch($search, 15, $canViewPayments, $admissionFilter);
 
         return view('members.index', compact('members', 'search', 'canViewPayments', 'admissionFilter'));
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        $suggestions = $this->members->searchSuggestions($request->input('q'));
+
+        return response()->json([
+            'suggestions' => $suggestions,
+        ]);
     }
 
     public function create(): View
@@ -77,15 +91,42 @@ class MemberController extends Controller
 
     public function show(Member $member): View
     {
-        $member->load([
-            'contributions' => fn ($query) => $query->with('receipt')->orderBy('transaction_date', 'desc'),
-            'loans' => fn ($query) => $query->orderBy('issue_date', 'desc'),
-            'loans.repayments' => fn ($query) => $query->orderBy('payment_date', 'desc'),
-        ]);
-
+        $statement = $this->memberStatementService->build($member);
         $hasAdmissionFee = $member->contributions->contains('type', 'Admission Fee');
 
-        return view('members.show', compact('member', 'hasAdmissionFee'));
+        return view('members.show', compact('member', 'hasAdmissionFee', 'statement'));
+    }
+
+    public function statementPrint(Member $member): Response
+    {
+        $statement = $this->memberStatementService->build($member);
+        $pdf = Pdf::loadView('members.statement_pdf', array_merge($statement, [
+            'generatedAt' => now(),
+            'downloadMode' => false,
+        ]));
+
+        $filename = 'member_statement_'.$member->membership_id.'_'.$statement['asOfDate']->format('Ymd').'.pdf';
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+        ]);
+    }
+
+    public function statementPdf(Member $member): Response
+    {
+        $statement = $this->memberStatementService->build($member);
+        $pdf = Pdf::loadView('members.statement_pdf', array_merge($statement, [
+            'generatedAt' => now(),
+            'downloadMode' => true,
+        ]));
+
+        $filename = 'member_statement_'.$member->membership_id.'_'.$statement['asOfDate']->format('Ymd').'.pdf';
+
+        return response($pdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     public function edit(Member $member): View
