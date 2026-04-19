@@ -16,7 +16,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'System Admin',
@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'treasurer@example.com'],
             [
                 'name' => 'Head Treasurer',
@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['email' => 'viewer@example.com'],
             [
                 'name' => 'Transparency Viewer',

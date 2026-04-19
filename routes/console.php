@@ -20,8 +20,23 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+function resolve_sqlite_path(?string $path = null): string
+{
+    $database = $path ?: env('DB_DATABASE', 'database.sqlite');
+
+    if (
+        str_starts_with($database, '/')
+        || str_starts_with($database, '\\')
+        || preg_match('/^[A-Za-z]:[\\\\\\/]/', $database) === 1
+    ) {
+        return $database;
+    }
+
+    return base_path($database);
+}
+
 Artisan::command('db:archive {--path=} {--name=}', function () {
-    $source = $this->option('path') ?: base_path(env('DB_DATABASE', 'ccm_db'));
+    $source = $this->option('path') ?: resolve_sqlite_path(env('DB_DATABASE', 'ccm_db'));
     if (! File::exists($source)) {
         $this->error('Database file not found at: '.$source);
         return 1;
@@ -91,7 +106,7 @@ Artisan::command('activity-logs:clear', function () {
 })->purpose('Clear all activity logs');
 
 Artisan::command('backup:sqlite', function () {
-    $databasePath = database_path(env('DB_DATABASE', 'database.sqlite'));
+    $databasePath = resolve_sqlite_path();
 
     if (! File::exists($databasePath)) {
         $this->error('SQLite database not found at: '.$databasePath);

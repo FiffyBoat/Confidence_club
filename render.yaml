@@ -1,6 +1,30 @@
+databases:
+  - name: confidence-club-db
+    plan: free
+
 services:
   - type: web
     name: confidence-club
-    env: docker
+    runtime: docker
     plan: free
-    autoDeploy: true
+    autoDeployTrigger: commit
+    healthCheckPath: /
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: confidence-club-db
+          property: connectionString
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: RUN_SEEDERS
+        value: "true"
