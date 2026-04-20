@@ -42,6 +42,10 @@ class SettingsController extends Controller
             'constitution_name' => Setting::getValue('constitution_name'),
             'club_start_date' => Setting::getValue('club_start_date', config('ccm.club_start_date')),
             'monthly_dues_amount' => Setting::getValue('monthly_dues_amount', (string) config('ccm.monthly_dues_amount', 50)),
+            'birthday_message_template' => Setting::getValue(
+                'birthday_message_template',
+                "On behalf of the Confidence Club Members, we celebrate :name today. May this new year of life bring joy, good health, strength, and abundant blessings."
+            ),
         ];
 
         foreach (self::SETTING_KEYS as $key) {
@@ -64,6 +68,7 @@ class SettingsController extends Controller
             'viewer' => ['nullable', 'array'],
             'club_start_date' => ['required', 'date'],
             'monthly_dues_amount' => ['required', 'numeric', 'min:0'],
+            'birthday_message_template' => ['required', 'string', 'max:1000'],
         ]);
 
         if ($request->hasFile('constitution_file')) {
@@ -94,6 +99,7 @@ class SettingsController extends Controller
 
         Setting::setValue('club_start_date', $validated['club_start_date']);
         Setting::setValue('monthly_dues_amount', (string) $validated['monthly_dues_amount']);
+        Setting::setValue('birthday_message_template', $validated['birthday_message_template']);
 
         return redirect()
             ->route('admin.settings')

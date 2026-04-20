@@ -16,11 +16,18 @@ use App\Repositories\MemberRepository;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
+    private const BIRTHDAY_QUOTES = [
+        'Today is a beautiful reminder of how much light one life can bring to a whole community.',
+        'A birthday is the perfect time to celebrate grace, growth, and the gift of togetherness.',
+        'May today be filled with laughter, kindness, and the warmth of people who value you deeply.',
+        'Every birthday is a fresh chapter, and we are grateful to witness your journey with you.',
+        'The club celebrates not just a birthday today, but the joy and strength you bring to us all.',
+    ];
+
     public function index()
     {
         $today = Carbon::today();
@@ -175,8 +182,15 @@ class DashboardController extends Controller
         }
 
         $birthdaysThisMonth = collect();
+        $birthdaysToday = collect();
         $birthdaysUpcoming = collect();
+        $birthdaySpotlight = null;
         if ($visibility['birthdays']) {
+            $messageTemplate = Setting::getValue(
+                'birthday_message_template',
+                "On behalf of the Confidence Club Members, we celebrate :name today. May this new year of life bring joy, good health, strength, and abundant blessings."
+            );
+
             $birthdaysThisMonth = Member::query()
                 ->whereNotNull('birth_month')
                 ->whereNotNull('birth_day')
@@ -184,7 +198,10 @@ class DashboardController extends Controller
                 ->orderBy('birth_day')
                 ->get();
 
-            $birthdaysUpcoming = $this->buildUpcomingBirthdays($today, 7);
+            $birthdaysToday = $this->buildTodayBirthdays($today, $messageTemplate);
+            $birthdaysUpcoming = $this->buildUpcomingBirthdays($today, 7, $messageTemplate);
+            $birthdaysThisMonth = $this->buildMonthlyBirthdays($birthdaysThisMonth, $today, $messageTemplate);
+            $birthdaySpotlight = $birthdaysToday->first() ?? $birthdaysUpcoming->first();
         }
 
         $specialContributions = collect();
@@ -254,14 +271,37 @@ class DashboardController extends Controller
             'meetings' => $meetings,
             'directory' => $directory,
             'birthdaysThisMonth' => $birthdaysThisMonth,
+            'birthdaysToday' => $birthdaysToday,
             'birthdaysUpcoming' => $birthdaysUpcoming,
+            'birthdaySpotlight' => $birthdaySpotlight,
             'specialContributions' => $specialContributions,
             'transparency' => $transparency,
             'transparencyVisibility' => $transparencyVisibility,
         ]);
     }
 
-    private function buildUpcomingBirthdays(Carbon $today, int $daysAhead)
+    private function buildTodayBirthdays(Carbon $today, string $messageTemplate)
+    {
+        $members = Member::query()
+            ->whereNotNull('birth_month')
+            ->whereNotNull('birth_day')
+            ->orderBy('full_name')
+            ->get();
+
+        $todayBirthdays = [];
+
+        foreach ($members as $member) {
+            $birthday = $this->resolveBirthdayDate($today->year, (int) $member->birth_month, (int) $member->birth_day);
+
+            if ($birthday->isSameDay($today)) {
+                $todayBirthdays[] = $this->buildBirthdayEntry($member, $birthday, 0, $messageTemplate, $today);
+            }
+        }
+
+        return collect($todayBirthdays);
+    }
+
+    private function buildUpcomingBirthdays(Carbon $today, int $daysAhead, string $messageTemplate)
     {
         $end = $today->copy()->addDays($daysAhead);
         $members = Member::query()
@@ -272,21 +312,105 @@ class DashboardController extends Controller
         $upcoming = [];
 
         foreach ($members as $member) {
-            $base = Carbon::create($today->year, $member->birth_month, 1);
-            $day = min($member->birth_day, $base->daysInMonth);
-            $birthday = $base->copy()->day($day);
+            $birthday = $this->resolveBirthdayDate($today->year, (int) $member->birth_month, (int) $member->birth_day);
             if ($birthday->lessThan($today)) {
-                $birthday->addYear();
+                $birthday = $this->resolveBirthdayDate($today->year + 1, (int) $member->birth_month, (int) $member->birth_day);
             }
 
-            if ($birthday->between($today, $end)) {
-                $upcoming[] = [
-                    'member' => $member,
-                    'date' => $birthday,
-                ];
+            if ($birthday->greaterThan($today) && $birthday->lessThanOrEqualTo($end)) {
+                $upcoming[] = $this->buildBirthdayEntry(
+                    $member,
+                    $birthday,
+                    (int) $today->diffInDays($birthday),
+                    $messageTemplate,
+                    $today
+                );
             }
         }
 
         return collect($upcoming)->sortBy('date');
+    }
+
+    private function buildMonthlyBirthdays($members, Carbon $today, string $messageTemplate)
+    {
+        return $members
+            ->map(function ($member) use ($today, $messageTemplate) {
+                $birthday = $this->resolveBirthdayDate($today->year, (int) $member->birth_month, (int) $member->birth_day);
+                $days = $birthday->lessThan($today) ? null : (int) $today->diffInDays($birthday);
+
+                return $this->buildBirthdayEntry($member, $birthday, $days, $messageTemplate, $today);
+            })
+            ->values();
+    }
+
+    private function resolveBirthdayDate(int $year, int $month, int $day): Carbon
+    {
+        if ($month === 2 && $day === 29 && ! Carbon::create($year, 1, 1)->isLeapYear()) {
+            $day = 28;
+        }
+
+        return Carbon::create($year, $month, $day);
+    }
+
+    private function buildBirthdayEntry(Member $member, Carbon $date, ?int $days, string $messageTemplate, Carbon $today): array
+    {
+        $quote = $this->resolveBirthdayQuote($member, $today);
+        $message = $this->buildBirthdayMessage($member, $messageTemplate);
+        $shareText = trim($message."\n\n".$quote."\n\nWith love from Confidence Club Members.");
+
+        return [
+            'member' => $member,
+            'date' => $date,
+            'days' => $days,
+            'initials' => $this->extractInitials($member->full_name),
+            'message' => $message,
+            'quote' => $quote,
+            'share_text' => $shareText,
+            'whatsapp_url' => $this->buildWhatsAppUrl($member->phone, $shareText),
+        ];
+    }
+
+    private function buildBirthdayMessage(Member $member, string $messageTemplate): string
+    {
+        return str_replace(':name', $member->full_name, $messageTemplate);
+    }
+
+    private function resolveBirthdayQuote(Member $member, Carbon $today): string
+    {
+        $index = abs(crc32($member->full_name.$today->toDateString())) % count(self::BIRTHDAY_QUOTES);
+
+        return self::BIRTHDAY_QUOTES[$index];
+    }
+
+    private function extractInitials(string $name): string
+    {
+        $parts = preg_split('/\s+/', trim($name)) ?: [];
+        $initials = '';
+
+        foreach (array_slice($parts, 0, 2) as $part) {
+            if ($part !== '') {
+                $initials .= strtoupper(substr($part, 0, 1));
+            }
+        }
+
+        return $initials !== '' ? $initials : 'CC';
+    }
+
+    private function buildWhatsAppUrl(?string $phone, string $message): string
+    {
+        $encodedMessage = rawurlencode($message);
+        $digits = preg_replace('/\D+/', '', (string) $phone);
+
+        if ($digits !== '') {
+            if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+                $digits = '233'.substr($digits, 1);
+            }
+
+            if (strlen($digits) >= 10) {
+                return 'https://wa.me/'.$digits.'?text='.$encodedMessage;
+            }
+        }
+
+        return 'https://wa.me/?text='.$encodedMessage;
     }
 }

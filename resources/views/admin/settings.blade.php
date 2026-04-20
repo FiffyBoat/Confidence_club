@@ -110,6 +110,29 @@
             </div>
         </div>
 
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white">
+                    <strong>Birthday Message</strong>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Customize the birthday message shown in viewer celebrations and quick-share actions.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Birthday Message Template</label>
+                        <textarea
+                            name="birthday_message_template"
+                            class="form-control"
+                            rows="6"
+                            required
+                        >{{ old('birthday_message_template', $settings['birthday_message_template']) }}</textarea>
+                    </div>
+                    <div class="form-text">
+                        Use <code>:name</code> where you want the celebrant's name to appear.
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-lg-12">
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white">
