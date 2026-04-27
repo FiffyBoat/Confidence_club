@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Treasurer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Contribution;
+use App\Models\Income;
+use App\Models\LoanRepayment;
 use App\Models\Receipt;
 use App\Services\ReceiptService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class ReceiptController extends Controller
@@ -70,8 +73,9 @@ class ReceiptController extends Controller
 
         $receipts = $query->paginate(15)->withQueryString();
         $paymentLabels = $this->buildPaymentLabels($receipts->items());
+        $missingReceiptCount = $this->missingReceiptCount();
 
-        return view('receipts.index', compact('receipts', 'search', 'paymentType', 'paymentLabels'));
+        return view('receipts.index', compact('receipts', 'search', 'paymentType', 'paymentLabels', 'missingReceiptCount'));
     }
 
     public function show(Receipt $receipt): View
@@ -125,6 +129,44 @@ class ReceiptController extends Controller
             ->with('status', "Regenerated {$regenerated} receipts.");
     }
 
+    public function generateMissing(Request $request, ReceiptService $receiptService): RedirectResponse
+    {
+        set_time_limit(0);
+
+        $created = [
+            'contributions' => 0,
+            'incomes' => 0,
+            'repayments' => 0,
+        ];
+
+        Contribution::with('member')->whereDoesntHave('receipt')->orderBy('id')->chunkById(100, function ($contributions) use ($receiptService, $request, &$created) {
+            foreach ($contributions as $contribution) {
+                $receiptService->createForContribution($contribution, $request->user());
+                $created['contributions']++;
+            }
+        });
+
+        Income::whereDoesntHave('receipt')->orderBy('id')->chunkById(100, function ($incomes) use ($receiptService, $request, &$created) {
+            foreach ($incomes as $income) {
+                $receiptService->createForIncome($income, $request->user());
+                $created['incomes']++;
+            }
+        });
+
+        LoanRepayment::with('loan.member')->whereDoesntHave('receipt')->orderBy('id')->chunkById(100, function ($repayments) use ($receiptService, $request, &$created) {
+            foreach ($repayments as $repayment) {
+                $receiptService->createForLoanRepayment($repayment, $request->user());
+                $created['repayments']++;
+            }
+        });
+
+        $total = array_sum($created);
+
+        return redirect()
+            ->route('receipts.index')
+            ->with('status', "Generated {$total} missing receipts.");
+    }
+
     private function resolveReceiptPath(Receipt $receipt, ReceiptService $receiptService): ?string
     {
         $path = $receipt->pdf_path ?: 'receipts/'.$receipt->receipt_number.'.pdf';
@@ -160,6 +202,13 @@ class ReceiptController extends Controller
         }
 
         return $labels;
+    }
+
+    private function missingReceiptCount(): int
+    {
+        return Contribution::whereDoesntHave('receipt')->count()
+            + Income::whereDoesntHave('receipt')->count()
+            + LoanRepayment::whereDoesntHave('receipt')->count();
     }
 
     private function resolvePaymentLabel(Receipt $receipt, array $contributionTypes = []): string

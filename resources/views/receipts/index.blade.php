@@ -7,10 +7,18 @@
         <h2 class="mb-1">Receipts</h2>
         <div class="text-muted">View generated receipts and download PDF copies.</div>
     </div>
-    <form action="{{ route('receipts.regenerate') }}" method="POST" onsubmit="return confirm('Regenerate all receipt PDFs now? This may take a moment.');">
-        @csrf
-        <button class="btn btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>Regenerate PDFs</button>
-    </form>
+    <div class="d-flex flex-column flex-sm-row gap-2">
+        @if(($missingReceiptCount ?? 0) > 0)
+            <form action="{{ route('receipts.generate-missing') }}" method="POST" onsubmit="return confirm('Generate missing receipts now? This may take a moment.');">
+                @csrf
+                <button class="btn btn-primary"><i class="bi bi-receipt-cutoff me-1"></i>Generate Missing ({{ $missingReceiptCount }})</button>
+            </form>
+        @endif
+        <form action="{{ route('receipts.regenerate') }}" method="POST" onsubmit="return confirm('Regenerate all receipt PDFs now? This may take a moment.');">
+            @csrf
+            <button class="btn btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>Regenerate PDFs</button>
+        </form>
+    </div>
 </div>
 
 @if(session('status'))

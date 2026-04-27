@@ -97,6 +97,7 @@ Route::middleware(['auth', 'active', 'role:admin,treasurer'])->group(function ()
     Route::resource('receipts', ReceiptController::class)->only(['index', 'show']);
     Route::get('receipts/{receipt}/download', [ReceiptController::class, 'download'])->name('receipts.download');
     Route::get('receipts/{receipt}/view', [ReceiptController::class, 'view'])->name('receipts.view');
+    Route::post('receipts/generate-missing', [ReceiptController::class, 'generateMissing'])->name('receipts.generate-missing');
     Route::post('receipts/regenerate', [ReceiptController::class, 'regenerateAll'])->name('receipts.regenerate');
     Route::get('reports/financial', [ReportController::class, 'financial'])->name('reports.financial');
     Route::get('reports/financial/print', [ReportController::class, 'financialPrint'])->name('reports.financial.print');
