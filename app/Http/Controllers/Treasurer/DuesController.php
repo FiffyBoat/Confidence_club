@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DuesController extends Controller
@@ -112,18 +113,20 @@ class DuesController extends Controller
         $year = (int) $data['year'];
         $transactionDate = $data['transaction_date'] ?? Carbon::create($year, $month, 1)->toDateString();
 
-        $contribution = Contribution::create([
-            'member_id' => $data['member_id'],
-            'type' => 'Monthly Dues',
-            'description' => 'Monthly dues for '.Carbon::create($year, $month, 1)->format('F Y'),
-            'amount' => $data['amount'],
-            'payment_method' => $data['payment_method'],
-            'transaction_date' => $transactionDate,
-            'recorded_by' => $request->user()->id,
-        ]);
+        DB::transaction(function () use ($data, $month, $year, $transactionDate, $request) {
+            $contribution = Contribution::create([
+                'member_id' => $data['member_id'],
+                'type' => 'Monthly Dues',
+                'description' => 'Monthly dues for '.Carbon::create($year, $month, 1)->format('F Y'),
+                'amount' => $data['amount'],
+                'payment_method' => $data['payment_method'],
+                'transaction_date' => $transactionDate,
+                'recorded_by' => $request->user()->id,
+            ]);
 
-        $contribution->load('member');
-        $this->receiptService->createForContribution($contribution, $request->user());
+            $contribution->load('member');
+            $this->receiptService->createForContribution($contribution, $request->user());
+        });
 
         return redirect()
             ->route('dues.index', ['year' => $year, 'as_of' => $month])

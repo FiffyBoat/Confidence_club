@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMemberRequest;
 use App\Http\Requests\UpdateMemberRequest;
 use App\Models\ActivityLog;
+use App\Models\Contribution;
 use App\Models\Member;
 use App\Repositories\MemberRepository;
 use App\Services\MemberStatementService;
@@ -15,6 +16,7 @@ use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class MemberController extends Controller
@@ -72,18 +74,20 @@ class MemberController extends Controller
         ]);
 
         if ($request->boolean('record_admission_fee')) {
-            $contribution = \App\Models\Contribution::create([
-                'member_id' => $member->id,
-                'type' => 'Admission Fee',
-                'description' => 'Membership admission fee',
-                'amount' => 200,
-                'payment_method' => $request->validated('admission_payment_method'),
-                'transaction_date' => $request->validated('admission_transaction_date'),
-                'recorded_by' => $request->user()->id,
-            ]);
+            DB::transaction(function () use ($member, $request) {
+                $contribution = Contribution::create([
+                    'member_id' => $member->id,
+                    'type' => 'Admission Fee',
+                    'description' => 'Membership admission fee',
+                    'amount' => 200,
+                    'payment_method' => $request->validated('admission_payment_method'),
+                    'transaction_date' => $request->validated('admission_transaction_date'),
+                    'recorded_by' => $request->user()->id,
+                ]);
 
-            $contribution->load('member');
-            $this->receiptService->createForContribution($contribution, $request->user());
+                $contribution->load('member');
+                $this->receiptService->createForContribution($contribution, $request->user());
+            });
         }
 
         return redirect()->route('members.index')->with('success', 'Member created successfully.');
@@ -153,24 +157,26 @@ class MemberController extends Controller
             ->exists();
 
         if (! $hasAdmissionFee && $request->boolean('record_admission_fee')) {
-            $contribution = \App\Models\Contribution::create([
-                'member_id' => $member->id,
-                'type' => 'Admission Fee',
-                'description' => 'Membership admission fee',
-                'amount' => 200,
-                'payment_method' => $request->validated('admission_payment_method'),
-                'transaction_date' => $request->validated('admission_transaction_date'),
-                'recorded_by' => $request->user()->id,
-            ]);
+            DB::transaction(function () use ($member, $request) {
+                $contribution = Contribution::create([
+                    'member_id' => $member->id,
+                    'type' => 'Admission Fee',
+                    'description' => 'Membership admission fee',
+                    'amount' => 200,
+                    'payment_method' => $request->validated('admission_payment_method'),
+                    'transaction_date' => $request->validated('admission_transaction_date'),
+                    'recorded_by' => $request->user()->id,
+                ]);
 
-            $contribution->load('member');
-            $this->receiptService->createForContribution($contribution, $request->user());
+                $contribution->load('member');
+                $this->receiptService->createForContribution($contribution, $request->user());
 
-            ActivityLog::create([
-                'user_id' => $request->user()->id,
-                'action' => 'Recorded Admission Fee',
-                'description' => 'Recorded admission fee for '.$member->full_name.' ('.$member->membership_id.')',
-            ]);
+                ActivityLog::create([
+                    'user_id' => $request->user()->id,
+                    'action' => 'Recorded Admission Fee',
+                    'description' => 'Recorded admission fee for '.$member->full_name.' ('.$member->membership_id.')',
+                ]);
+            });
         }
 
         return redirect()->route('members.show', $member)->with('success', 'Member updated successfully.');

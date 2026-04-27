@@ -10,6 +10,7 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ReceiptService
 {
@@ -88,7 +89,17 @@ class ReceiptService
         array $payload
     ): Receipt {
         return DB::transaction(function () use ($memberId, $amount, $referenceType, $referenceId, $generatedBy, $payload) {
-            $receiptNumber = $this->nextReceiptNumber();
+            $receipt = Receipt::create([
+                'receipt_number' => 'TMP-'.Str::uuid(),
+                'member_id' => $memberId,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+                'amount' => $amount,
+                'generated_by' => $generatedBy,
+                'pdf_path' => '',
+            ]);
+
+            $receiptNumber = $this->receiptNumberForId($receipt->id);
 
             $pdf = Pdf::loadView('receipts.pdf', array_merge($payload, [
                 'receiptNumber' => $receiptNumber,
@@ -98,24 +109,20 @@ class ReceiptService
             $path = 'receipts/'.$receiptNumber.'.pdf';
             Storage::disk('public')->put($path, $pdf->output());
 
-            return Receipt::create([
+            $receipt->update([
                 'receipt_number' => $receiptNumber,
-                'member_id' => $memberId,
-                'reference_type' => $referenceType,
-                'reference_id' => $referenceId,
-                'amount' => $amount,
-                'generated_by' => $generatedBy,
                 'pdf_path' => $path,
             ]);
+
+            return $receipt->fresh();
         });
     }
 
-    private function nextReceiptNumber(): string
+    private function receiptNumberForId(int $receiptId): string
     {
-        $sequence = (int) Receipt::max('id') + 1;
         $year = now()->format('Y');
 
-        return 'REC-'.$year.'-'.str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
+        return 'REC-'.$year.'-'.str_pad((string) $receiptId, 5, '0', STR_PAD_LEFT);
     }
 
     public function regeneratePdf(Receipt $receipt): ?string
