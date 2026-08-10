@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
+use App\Support\ClubFiles;
 
 class Member extends Model
 {
@@ -35,7 +35,7 @@ class Member extends Model
 
             $member->receipts()->withTrashed()->get()->each(function ($receipt) use ($isForceDeleting) {
                 if ($receipt->pdf_path) {
-                    Storage::disk('public')->delete($receipt->pdf_path);
+                    ClubFiles::delete($receipt->pdf_path);
                 }
 
                 $isForceDeleting ? $receipt->forceDelete() : $receipt->delete();

@@ -7,9 +7,9 @@ use App\Models\Income;
 use App\Models\LoanRepayment;
 use App\Models\Receipt;
 use App\Models\User;
+use App\Support\ClubFiles;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ReceiptService
@@ -107,7 +107,7 @@ class ReceiptService
             ]));
 
             $path = 'receipts/'.$receiptNumber.'.pdf';
-            Storage::disk('public')->put($path, $pdf->output());
+            ClubFiles::put($path, $pdf->output());
 
             $receipt->update([
                 'receipt_number' => $receiptNumber,
@@ -139,7 +139,7 @@ class ReceiptService
             'amount' => $receipt->amount,
         ]));
 
-        Storage::disk('public')->put($path, $pdf->output());
+        ClubFiles::put($path, $pdf->output());
 
         if ($receipt->pdf_path !== $path) {
             $receipt->update(['pdf_path' => $path]);

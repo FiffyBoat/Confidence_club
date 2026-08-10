@@ -17,15 +17,34 @@ class ExpenseController extends Controller
     public function index(Request $request): View
     {
         $search = $request->input('q');
+        $year = (int) $request->input('year', now()->year);
 
-        $query = Expense::orderBy('transaction_date', 'desc');
+        $query = Expense::query()
+            ->whereYear('transaction_date', $year);
+
         if ($search) {
             $query->where('category', 'like', '%'.$search.'%');
         }
 
+        $totalExpenses = (clone $query)->sum('amount');
+        $availableYears = Expense::query()
+            ->selectRaw($this->yearExpression().' as year')
+            ->distinct()
+            ->orderByDesc('year')
+            ->pluck('year')
+            ->map(fn ($value) => (int) $value)
+            ->filter()
+            ->values();
+
+        if (! $availableYears->contains($year)) {
+            $availableYears->prepend($year);
+            $availableYears = $availableYears->unique()->sortDesc()->values();
+        }
+
+        $query->orderBy('transaction_date', 'desc');
         $expenses = $query->paginate(15)->withQueryString();
 
-        return view('expenses.index', compact('expenses', 'search'));
+        return view('expenses.index', compact('expenses', 'search', 'year', 'availableYears', 'totalExpenses'));
     }
 
     public function create(): View
@@ -97,5 +116,14 @@ class ExpenseController extends Controller
         ]);
 
         return redirect()->route('expenses.index')->with('success', 'Expense deleted.');
+    }
+
+    private function yearExpression(): string
+    {
+        return match (DB::getDriverName()) {
+            'sqlite' => "strftime('%Y', transaction_date)",
+            'pgsql' => 'EXTRACT(YEAR FROM transaction_date)',
+            default => 'YEAR(transaction_date)',
+        };
     }
 }

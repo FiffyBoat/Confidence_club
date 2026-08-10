@@ -8,8 +8,8 @@ use App\Models\Income;
 use App\Models\LoanRepayment;
 use App\Models\Receipt;
 use App\Services\ReceiptService;
+use App\Support\ClubFiles;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -94,7 +94,7 @@ class ReceiptController extends Controller
             abort(404, 'Receipt file is not available.');
         }
 
-        return Storage::disk('public')->download($path, $receipt->receipt_number.'.pdf');
+        return ClubFiles::download($path, $receipt->receipt_number.'.pdf');
     }
 
     public function view(Receipt $receipt, ReceiptService $receiptService)
@@ -105,7 +105,7 @@ class ReceiptController extends Controller
             abort(404, 'Receipt file is not available.');
         }
 
-        return Storage::disk('public')->response(
+        return ClubFiles::response(
             $path,
             $receipt->receipt_number.'.pdf',
             ['Content-Disposition' => 'inline; filename="'.$receipt->receipt_number.'.pdf"']
@@ -171,7 +171,7 @@ class ReceiptController extends Controller
     {
         $path = $receipt->pdf_path ?: 'receipts/'.$receipt->receipt_number.'.pdf';
 
-        if (Storage::disk('public')->exists($path)) {
+        if (ClubFiles::exists($path)) {
             return $path;
         }
 

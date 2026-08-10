@@ -4,7 +4,7 @@ set -e
 mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views
 php artisan storage:link >/dev/null 2>&1 || true
 
-if [ "${DB_CONNECTION:-sqlite}" = "sqlite" ] && [ -n "${DB_DATABASE:-}" ]; then
+if [ "${DB_CONNECTION:-pgsql}" = "sqlite" ] && [ -n "${DB_DATABASE:-}" ]; then
     case "$DB_DATABASE" in
         /*) SQLITE_DB_PATH="$DB_DATABASE" ;;
         *) SQLITE_DB_PATH="/var/www/html/$DB_DATABASE" ;;

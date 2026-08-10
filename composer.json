@@ -10,8 +10,9 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "maennchen/zipstream-php": "3.1.*",
-        "maatwebsite/excel": "^3.1"
+        "league/flysystem-aws-s3-v3": "3.0",
+        "maatwebsite/excel": "^3.1",
+        "maennchen/zipstream-php": "3.1.*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -67,7 +68,6 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
         "pre-package-uninstall": [

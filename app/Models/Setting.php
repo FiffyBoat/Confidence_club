@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
 {
+    private static ?array $values = null;
+
     protected $fillable = [
         'key',
         'value',
@@ -13,7 +15,11 @@ class Setting extends Model
 
     public static function getValue(string $key, ?string $default = null): ?string
     {
-        return static::query()->where('key', $key)->value('value') ?? $default;
+        if (static::$values === null) {
+            static::$values = static::query()->pluck('value', 'key')->all();
+        }
+
+        return static::$values[$key] ?? $default;
     }
 
     public static function getBool(string $key, bool $default = false): bool
@@ -33,5 +39,7 @@ class Setting extends Model
             ['key' => $key],
             ['value' => $value]
         );
+
+        static::$values = null;
     }
 }

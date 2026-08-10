@@ -13,10 +13,10 @@ use App\Models\Member;
 use App\Models\Receipt;
 use App\Models\Setting;
 use App\Repositories\MemberRepository;
+use App\Support\ClubFiles;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -140,9 +140,7 @@ class DashboardController extends Controller
 
         $constitutionPath = Setting::getValue('constitution_path');
         $constitutionName = Setting::getValue('constitution_name') ?? 'constitution';
-        $constitutionExists = $constitutionPath
-            ? Storage::disk('public')->exists($constitutionPath)
-            : false;
+        $constitutionExists = ClubFiles::exists($constitutionPath);
 
         $announcements = collect();
         if ($visibility['announcements']) {

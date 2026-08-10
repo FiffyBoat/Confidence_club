@@ -7,35 +7,384 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use App\Models\Contribution;
 use App\Models\Income;
 use App\Models\LoanRepayment;
 use App\Models\Receipt;
 use App\Models\Member;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\ReceiptService;
+use App\Support\ClubFiles;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-function resolve_sqlite_path(?string $path = null): string
-{
-    $database = $path ?: env('DB_DATABASE', 'database.sqlite');
+if (! function_exists('current_database_driver')) {
+    function current_database_driver(): string
+    {
+        $defaultConnection = (string) config('database.default', env('DB_CONNECTION', 'pgsql'));
 
-    if (
-        str_starts_with($database, '/')
-        || str_starts_with($database, '\\')
-        || preg_match('/^[A-Za-z]:[\\\\\\/]/', $database) === 1
-    ) {
-        return $database;
+        return (string) config('database.connections.'.$defaultConnection.'.driver', $defaultConnection);
     }
-
-    return base_path($database);
 }
 
+if (! function_exists('resolve_sqlite_path')) {
+    function resolve_sqlite_path(?string $path = null): string
+    {
+        $database = $path ?: env('DB_DATABASE', 'database.sqlite');
+
+        if (
+            str_starts_with($database, '/')
+            || str_starts_with($database, '\\')
+            || preg_match('/^[A-Za-z]:[\\\\\\/]/', $database) === 1
+        ) {
+            return $database;
+        }
+
+        return base_path($database);
+    }
+}
+
+if (! function_exists('csv_restore_table_order')) {
+    function csv_restore_table_order(): array
+    {
+        return [
+            'users',
+            'members',
+            'settings',
+            'announcements',
+            'meetings',
+            'activity_logs',
+            'password_reset_tokens',
+            'sessions',
+            'cache',
+            'cache_locks',
+            'jobs',
+            'job_batches',
+            'failed_jobs',
+            'staging_ccm_imports',
+            'contributions',
+            'incomes',
+            'expenses',
+            'loans',
+            'donations',
+            'loan_repayments',
+            'receipts',
+        ];
+    }
+}
+
+if (! function_exists('csv_restore_parse_datetime')) {
+    function csv_restore_parse_datetime(string $value): string
+    {
+        $formats = [
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'd/m/Y H:i:s',
+            'd/m/Y H:i',
+            'm/d/Y H:i:s',
+            'm/d/Y H:i',
+            \DateTimeInterface::ATOM,
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                return \Carbon\Carbon::createFromFormat($format, $value)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return $value;
+        }
+    }
+}
+
+if (! function_exists('csv_restore_parse_date')) {
+    function csv_restore_parse_date(string $value): string
+    {
+        $formats = [
+            'Y-m-d',
+            'd/m/Y',
+            'm/d/Y',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'd/m/Y H:i:s',
+            'd/m/Y H:i',
+            'm/d/Y H:i:s',
+            'm/d/Y H:i',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                return \Carbon\Carbon::createFromFormat($format, $value)->format('Y-m-d');
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
+        try {
+            return \Carbon\Carbon::parse($value)->format('Y-m-d');
+        } catch (\Throwable) {
+            return $value;
+        }
+    }
+}
+
+if (! function_exists('csv_restore_normalize_value')) {
+    function csv_restore_normalize_value(string $table, string $column, mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return null;
+        }
+
+        if ($column === 'last_activity' || $column === 'batch') {
+            return (int) $trimmed;
+        }
+
+        if ($column === 'is_active' || str_starts_with($column, 'is_')) {
+            return in_array(strtolower($trimmed), ['1', 'true', 'yes', 'on'], true);
+        }
+
+        if ((preg_match('/(^id$|_id$|_by$)/', $column) === 1) && ctype_digit($trimmed)) {
+            return (int) $trimmed;
+        }
+
+        if (preg_match('/(amount|balance|rate|principal|payable)$/', $column) === 1 && is_numeric($trimmed)) {
+            return $trimmed;
+        }
+
+        if (
+            $column === 'deleted_at'
+            || Str::endsWith($column, '_at')
+            || in_array($column, ['meeting_at', 'email_verified_at', 'starts_at', 'ends_at'], true)
+        ) {
+            return csv_restore_parse_datetime($trimmed);
+        }
+
+        if (
+            Str::endsWith($column, '_date')
+            || in_array($column, ['join_date', 'transaction_date', 'issue_date', 'due_date', 'payment_date', 'donation_date'], true)
+        ) {
+            return csv_restore_parse_date($trimmed);
+        }
+
+        return $value;
+    }
+}
+
+if (! function_exists('csv_restore_import_table')) {
+    function csv_restore_import_table(string $table, string $path): int
+    {
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            throw new RuntimeException('Unable to open CSV at '.$path);
+        }
+
+        $headers = fgetcsv($handle);
+        if (! $headers) {
+            fclose($handle);
+
+            return 0;
+        }
+
+        $headers = array_map(static function ($header) {
+            return trim((string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $header));
+        }, $headers);
+
+        $rows = [];
+        $inserted = 0;
+        $headerCount = count($headers);
+
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) === 1 && trim((string) $row[0]) === '') {
+                continue;
+            }
+
+            if (count($row) < $headerCount) {
+                $row = array_pad($row, $headerCount, null);
+            } elseif (count($row) > $headerCount) {
+                $fixed = array_slice($row, 0, $headerCount - 1);
+                $fixed[] = implode(',', array_slice($row, $headerCount - 1));
+                $row = $fixed;
+            }
+
+            $data = array_combine($headers, $row);
+            if (! $data) {
+                continue;
+            }
+
+            foreach ($data as $column => $value) {
+                $data[$column] = csv_restore_normalize_value($table, $column, $value);
+            }
+
+            $rows[] = $data;
+
+            if (count($rows) >= 250) {
+                DB::table($table)->insert($rows);
+                $inserted += count($rows);
+                $rows = [];
+            }
+        }
+
+        if ($rows !== []) {
+            DB::table($table)->insert($rows);
+            $inserted += count($rows);
+        }
+
+        fclose($handle);
+
+        return $inserted;
+    }
+}
+
+if (! function_exists('csv_restore_sync_sequences')) {
+    function csv_restore_sync_sequences(array $tables): void
+    {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            foreach ($tables as $table) {
+                if (! Schema::hasTable($table) || ! Schema::hasColumn($table, 'id')) {
+                    continue;
+                }
+
+                $columnType = Schema::getColumnType($table, 'id');
+                if (! in_array($columnType, ['integer', 'bigint', 'smallint', 'int2', 'int4', 'int8'], true)) {
+                    continue;
+                }
+
+                $qualifiedTable = str_contains($table, '.')
+                    ? $table
+                    : 'public.'.$table;
+                $sequence = DB::selectOne(
+                    'SELECT pg_get_serial_sequence(?, ?) AS sequence_name',
+                    [$qualifiedTable, 'id']
+                )?->sequence_name;
+
+                if (! $sequence) {
+                    continue;
+                }
+
+                DB::statement(
+                    'SELECT setval('.DB::getPdo()->quote($sequence).', COALESCE((SELECT MAX(id) FROM "'.$table.'"), 1), (SELECT MAX(id) FROM "'.$table.'") IS NOT NULL)'
+                );
+            }
+        }
+    }
+}
+
+Artisan::command('files:migrate-managed {--from=public} {--overwrite} {--dry-run}', function () {
+    $fromDisk = (string) $this->option('from');
+    $toDisk = ClubFiles::diskName();
+    $overwrite = (bool) $this->option('overwrite');
+    $dryRun = (bool) $this->option('dry-run');
+
+    $disks = (array) config('filesystems.disks', []);
+    if (! array_key_exists($fromDisk, $disks)) {
+        $this->error('Unknown source disk: '.$fromDisk);
+
+        return 1;
+    }
+
+    if (! array_key_exists($toDisk, $disks)) {
+        $this->error('Unknown target disk: '.$toDisk);
+
+        return 1;
+    }
+
+    if ($fromDisk === $toDisk) {
+        $this->info('Source and target disks are both '.$toDisk.'. Nothing to migrate.');
+
+        return 0;
+    }
+
+    $source = Storage::disk($fromDisk);
+    $target = ClubFiles::disk();
+    $copied = 0;
+    $skipped = 0;
+    $missing = 0;
+
+    $copyPath = function (string $path, string $label) use ($source, $target, $overwrite, $dryRun, &$copied, &$skipped, &$missing) {
+        if (! $source->exists($path)) {
+            $missing++;
+
+            return;
+        }
+
+        if (! $overwrite && $target->exists($path)) {
+            $skipped++;
+
+            return;
+        }
+
+        if ($dryRun) {
+            $copied++;
+
+            return;
+        }
+
+        $stream = $source->readStream($path);
+        if ($stream === false) {
+            throw new RuntimeException('Unable to read '.$label.' from '.$path);
+        }
+
+        try {
+            if (! $target->writeStream($path, $stream)) {
+                throw new RuntimeException('Unable to write '.$label.' to '.$path);
+            }
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        $copied++;
+    };
+
+    $constitutionPath = Setting::getValue('constitution_path');
+    if ($constitutionPath) {
+        $copyPath($constitutionPath, 'constitution file');
+    }
+
+    Receipt::query()
+        ->whereNotNull('pdf_path')
+        ->orderBy('id')
+        ->chunkById(200, function ($receipts) use ($copyPath) {
+            foreach ($receipts as $receipt) {
+                $copyPath($receipt->pdf_path, 'receipt PDF');
+            }
+        });
+
+    $this->info($dryRun ? 'Dry-run complete.' : 'Managed file migration complete.');
+    $this->line('from_disk: '.$fromDisk);
+    $this->line('to_disk: '.$toDisk);
+    $this->line('copied: '.$copied);
+    $this->line('skipped: '.$skipped);
+    $this->line('missing: '.$missing);
+
+    return 0;
+})->purpose('Copy constitution and receipt files from a source disk to the configured managed files disk');
+
 Artisan::command('db:archive {--path=} {--name=}', function () {
+    if (current_database_driver() !== 'sqlite') {
+        $this->error('db:archive only supports SQLite database files. Use Supabase/Postgres backups from the provider dashboard, or export/import CSV data with db:restore-csv-backup.');
+
+        return 1;
+    }
+
     $source = $this->option('path') ?: resolve_sqlite_path(env('DB_DATABASE', 'ccm_db'));
     if (! File::exists($source)) {
         $this->error('Database file not found at: '.$source);
@@ -55,7 +404,112 @@ Artisan::command('db:archive {--path=} {--name=}', function () {
     return 0;
 })->purpose('Archive the SQLite database file to storage/app/backups');
 
+Artisan::command('db:restore-csv-backup {--dir=} {--tables=} {--force}', function () {
+    $directory = (string) ($this->option('dir') ?: base_path());
+    if (! str_starts_with($directory, DIRECTORY_SEPARATOR) && ! preg_match('/^[A-Za-z]:[\\\\\\/]/', $directory)) {
+        $directory = base_path($directory);
+    }
+
+    if (! File::isDirectory($directory)) {
+        $this->error('CSV directory not found: '.$directory);
+
+        return 1;
+    }
+
+    if (! $this->option('force') && ! $this->confirm('This will erase the current connected database data and import CSV backups. Continue?')) {
+        $this->warn('Restore cancelled.');
+
+        return 0;
+    }
+
+    $tables = array_values(array_filter(
+        csv_restore_table_order(),
+        static fn (string $table) => Schema::hasTable($table)
+    ));
+
+    $selectedTables = collect(explode(',', (string) $this->option('tables')))
+        ->map(static fn (string $table) => trim($table))
+        ->filter()
+        ->values();
+
+    if ($selectedTables->isNotEmpty()) {
+        $tables = array_values(array_intersect($tables, $selectedTables->all()));
+    }
+
+    $csvFiles = collect($tables)
+        ->mapWithKeys(static fn (string $table) => [$table => $directory.DIRECTORY_SEPARATOR.$table.'.csv'])
+        ->filter(static fn (string $path) => File::exists($path));
+
+    if ($csvFiles->isEmpty()) {
+        $this->error('No matching CSV backup files found in '.$directory);
+
+        return 1;
+    }
+
+    $tablesToRestore = array_values(array_intersect($tables, $csvFiles->keys()->all()));
+
+    DB::beginTransaction();
+
+    try {
+        $truncateList = collect($tablesToRestore)
+            ->map(static fn (string $table) => '"'.$table.'"')
+            ->implode(', ');
+
+        if ($truncateList !== '') {
+            DB::statement('TRUNCATE TABLE '.$truncateList.' RESTART IDENTITY CASCADE');
+        }
+
+        $totals = [];
+        foreach ($csvFiles as $table => $path) {
+            $count = csv_restore_import_table($table, $path);
+            $totals[$table] = $count;
+            $this->line('Imported '.$count.' row(s) into '.$table);
+        }
+
+        csv_restore_sync_sequences($tablesToRestore);
+
+        DB::commit();
+
+        $this->info('CSV restore completed successfully.');
+        foreach ($totals as $table => $count) {
+            $this->line($table.': '.$count);
+        }
+
+        return 0;
+    } catch (\Throwable $exception) {
+        DB::rollBack();
+
+        $this->error('CSV restore failed: '.$exception->getMessage());
+
+        return 1;
+    }
+})->purpose('Erase the current database contents and restore backup CSV files');
+
+Artisan::command('db:sync-pgsql-sequences {--tables=}', function () {
+    if (DB::getDriverName() !== 'pgsql') {
+        $this->error('db:sync-pgsql-sequences only supports PostgreSQL connections.');
+
+        return 1;
+    }
+
+    $tables = $this->option('tables')
+        ? array_values(array_filter(array_map('trim', explode(',', (string) $this->option('tables')))))
+        : csv_restore_table_order();
+
+    csv_restore_sync_sequences($tables);
+
+    $this->info('PostgreSQL sequences synced successfully.');
+
+    return 0;
+})->purpose('Sync PostgreSQL ID sequences after manual imports');
+
 Artisan::command('db:switch {target}', function () {
+    if (current_database_driver() !== 'sqlite') {
+        $this->error('db:switch only applies to the legacy SQLite files tracked in this repo. Set your Supabase connection in .env instead.');
+
+        return 1;
+    }
+
     $target = strtolower((string) $this->argument('target'));
     $map = [
         'full' => 'ccm_db',
@@ -106,6 +560,12 @@ Artisan::command('activity-logs:clear', function () {
 })->purpose('Clear all activity logs');
 
 Artisan::command('backup:sqlite', function () {
+    if (current_database_driver() !== 'sqlite') {
+        $this->line('Skipping SQLite backup because the active database driver is '.current_database_driver().'.');
+
+        return 0;
+    }
+
     $databasePath = resolve_sqlite_path();
 
     if (! File::exists($databasePath)) {
@@ -706,6 +1166,92 @@ Artisan::command('report:ccm-export {--format=both}', function () {
     return 0;
 })->purpose('Export CCM summary report to CSV/PDF');
 
+Artisan::command('receipts:generate-missing {--user-email=admin@example.com} {--limit=0} {--dry-run}', function () {
+    if (
+        ! Schema::hasTable('receipts')
+        || ! Schema::hasTable('contributions')
+        || ! Schema::hasTable('incomes')
+        || ! Schema::hasTable('loan_repayments')
+    ) {
+        $this->error('Missing receipts, contributions, incomes, or loan_repayments table (run migrations)');
+        return 1;
+    }
+
+    $userEmail = $this->option('user-email') ?: 'admin@example.com';
+    $user = User::where('email', $userEmail)->first() ?: User::query()->orderBy('id')->first();
+    if (! $user) {
+        $this->error('No users found. Run the DatabaseSeeder first.');
+        return 1;
+    }
+
+    $limit = max(0, (int) $this->option('limit'));
+    $remaining = $limit > 0 ? $limit : null;
+    $dryRun = (bool) $this->option('dry-run');
+    $service = app(ReceiptService::class);
+    $counts = [
+        'contributions' => 0,
+        'incomes' => 0,
+        'repayments' => 0,
+    ];
+
+    foreach (Contribution::with('member')->whereDoesntHave('receipt')->orderBy('id')->cursor() as $contribution) {
+        if ($remaining === 0) {
+            break;
+        }
+
+        if (! $dryRun) {
+            $service->createForContribution($contribution, $user);
+        }
+
+        $counts['contributions']++;
+        if ($remaining !== null) {
+            $remaining--;
+        }
+    }
+
+    if ($remaining !== 0) {
+        foreach (Income::whereDoesntHave('receipt')->orderBy('id')->cursor() as $income) {
+            if ($remaining === 0) {
+                break;
+            }
+
+            if (! $dryRun) {
+                $service->createForIncome($income, $user);
+            }
+
+            $counts['incomes']++;
+            if ($remaining !== null) {
+                $remaining--;
+            }
+        }
+    }
+
+    if ($remaining !== 0) {
+        foreach (LoanRepayment::with('loan.member')->whereDoesntHave('receipt')->orderBy('id')->cursor() as $repayment) {
+            if ($remaining === 0) {
+                break;
+            }
+
+            if (! $dryRun) {
+                $service->createForLoanRepayment($repayment, $user);
+            }
+
+            $counts['repayments']++;
+            if ($remaining !== null) {
+                $remaining--;
+            }
+        }
+    }
+
+    $total = array_sum($counts);
+    $this->info('Missing receipts generated: '.$total.($dryRun ? ' (dry-run)' : ''));
+    foreach ($counts as $type => $count) {
+        $this->line($type.': '.$count);
+    }
+
+    return 0;
+})->purpose('Generate receipts for any payments missing receipts');
+
 Artisan::command('receipts:generate-contributions {--user-email=admin@example.com} {--limit=0} {--dry-run}', function () {
     if (! Schema::hasTable('receipts') || ! Schema::hasTable('contributions')) {
         $this->error('Missing receipts or contributions table (run migrations)');
@@ -771,7 +1317,7 @@ Artisan::command('receipts:regenerate-all {--user-email=admin@example.com} {--dr
     if (! $dryRun) {
         foreach ($existingReceipts as $receipt) {
             if ($receipt->pdf_path) {
-                Storage::disk('public')->delete($receipt->pdf_path);
+                ClubFiles::delete($receipt->pdf_path);
             }
         }
         Receipt::withTrashed()->forceDelete();
@@ -919,4 +1465,6 @@ Artisan::command('users:prune-non-admin {--keep-email=admin@example.com}', funct
     return 0;
 })->purpose('Delete all non-admin users and reassign references to admin');
 
-Schedule::command('backup:sqlite')->dailyAt('23:55');
+if (current_database_driver() === 'sqlite') {
+    Schedule::command('backup:sqlite')->dailyAt('23:55');
+}

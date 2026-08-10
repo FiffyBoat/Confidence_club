@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Support\ClubFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -75,10 +75,10 @@ class SettingsController extends Controller
             $file = $validated['constitution_file'];
             $previousPath = Setting::getValue('constitution_path');
             if ($previousPath) {
-                Storage::disk('public')->delete($previousPath);
+                ClubFiles::delete($previousPath);
             }
 
-            $path = $file->store('constitution', 'public');
+            $path = ClubFiles::storeUploadedFile('constitution', $file);
 
             Setting::setValue('constitution_path', $path);
             Setting::setValue('constitution_name', $file->getClientOriginalName());

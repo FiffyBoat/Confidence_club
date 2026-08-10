@@ -5,26 +5,44 @@
     <div>
         <div class="text-muted small">Finance</div>
         <h2 class="mb-1">Expenses</h2>
-        <div class="text-muted">Track outgoing payments and spending.</div>
+        <div class="text-muted">Track outgoing payments and spending for {{ $year }}.</div>
     </div>
     <a href="{{ route('expenses.create') }}" class="btn btn-primary"><i class="bi bi-plus-circle me-1"></i>Record Expense</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-label">Total Expenses ({{ $year }})</div>
+            <div class="stat-value">GHS {{ number_format($totalExpenses, 2) }}</div>
+        </div>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0">
     <div class="card-body">
         <form action="{{ route('expenses.index') }}" method="GET" class="row g-2 mb-3">
-            <div class="col-md-10">
+            <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
                     <input type="text" name="q" class="form-control" placeholder="Search by category" value="{{ $search ?? '' }}">
-                    @if(!empty($search))
-                        <a href="{{ route('expenses.index') }}" class="btn btn-outline-secondary">Clear</a>
-                    @endif
                 </div>
             </div>
-            <div class="col-md-2 d-grid">
+            <div class="col-md-3">
+                <select name="year" class="form-select">
+                    @foreach($availableYears as $availableYear)
+                        <option value="{{ $availableYear }}" {{ (int) $year === (int) $availableYear ? 'selected' : '' }}>{{ $availableYear }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3 d-grid">
                 <button class="btn btn-primary">Search</button>
             </div>
+            @if(!empty($search))
+                <div class="col-12">
+                    <a href="{{ route('expenses.index', ['year' => $year]) }}" class="btn btn-outline-secondary btn-sm">Clear Search</a>
+                </div>
+            @endif
         </form>
 
         <div class="table-responsive">

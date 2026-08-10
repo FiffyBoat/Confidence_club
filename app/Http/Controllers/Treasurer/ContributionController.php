@@ -9,10 +9,10 @@ use App\Models\ActivityLog;
 use App\Models\Contribution;
 use App\Models\Member;
 use App\Services\ReceiptService;
+use App\Support\ClubFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ContributionController extends Controller
@@ -128,7 +128,7 @@ class ContributionController extends Controller
             $contribution->receipt->delete();
 
             if ($path) {
-                Storage::disk('public')->delete($path);
+                ClubFiles::delete($path);
             }
         }
 

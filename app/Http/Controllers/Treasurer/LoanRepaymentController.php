@@ -10,11 +10,11 @@ use App\Models\Loan;
 use App\Models\LoanRepayment;
 use App\Services\LoanService;
 use App\Services\ReceiptService;
+use App\Support\ClubFiles;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class LoanRepaymentController extends Controller
@@ -118,7 +118,7 @@ class LoanRepaymentController extends Controller
                 $receipt->delete();
 
                 if ($path) {
-                    Storage::disk('public')->delete($path);
+                    ClubFiles::delete($path);
                 }
             }
 

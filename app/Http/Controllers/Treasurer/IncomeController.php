@@ -8,10 +8,10 @@ use App\Http\Requests\UpdateIncomeRequest;
 use App\Models\ActivityLog;
 use App\Models\Income;
 use App\Services\ReceiptService;
+use App\Support\ClubFiles;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class IncomeController extends Controller
@@ -110,7 +110,7 @@ class IncomeController extends Controller
             $income->receipt->delete();
 
             if ($path) {
-                Storage::disk('public')->delete($path);
+                ClubFiles::delete($path);
             }
         }
 
